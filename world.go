@@ -100,6 +100,11 @@ func (w *World) HandleCharacterInput(character *Character, input string) {
 	case "look":
 		room.ShowRoom(character)
 
+	case "rename":
+		newName := tokens[len(tokens)-1]
+		character.Name = newName
+		character.SendMessage(fmt.Sprintf("Your name has been changed to %s.", character.Name))
+
 	case "quit":
 
 	default: // direction
