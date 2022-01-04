@@ -32,7 +32,10 @@ func generateSessionId() string {
 }
 
 func handleConnection(conn net.Conn, inputChannel chan SessionEvent) error {
-	log.Println("Connection accepted")
+	if addr, ok := conn.RemoteAddr().(*net.TCPAddr); ok {
+		ip := addr.IP.String()
+		log.Println(fmt.Sprintf("Connection accepted from '%s'", ip))
+	}
 
 	buf := make([]byte, 4096)
 
@@ -48,16 +51,14 @@ func handleConnection(conn net.Conn, inputChannel chan SessionEvent) error {
 			return err
 		}
 		if n == 0 {
-			log.Println("Closing connection")
 			inputChannel <- SessionEvent{session, &SessionDisconnectedEvent{}}
 			break
 		}
 		input := strings.TrimSpace(string(buf[0 : n-2]))
-		log.Println("Received message:", input)
+		//log.Println("Received message:", input)
 
 		inputChannel <- SessionEvent{session, &SessionInputEvent{input}}
 	}
-
 	return nil
 }
 

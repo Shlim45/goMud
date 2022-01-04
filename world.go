@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type World struct {
 	characters []*Character
@@ -41,16 +44,20 @@ func (w *World) HandleCharacterJoined(character *Character) {
 
 	character.SendMessage("Welcome to Darkness Falls\n\r")
 	character.SendMessage(character.Room.Desc)
-	w.Broadcast(fmt.Sprintf("%s appears in a puff of smoke.", character.Name), character.Room)
+	character.Room.ShowOthers(character, fmt.Sprintf("%s appears in a puff of smoke.", character.Name))
+
+	log.Println(fmt.Sprintf("Character login: %s", character.Name))
 }
 
-func (w *World) Broadcast(msg string, room *Room) {
-	if room != nil {
-		for _, player := range room.Characters {
-			player.SendMessage(msg)
-		}
-		return
-	}
+func (w *World) RemoveFromWorld(character *Character) {
+	room := character.Room
+	room.RemoveCharacter(character)
+	room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name))
+
+	log.Println(fmt.Sprintf("Character logout: %s", character.Name))
+}
+
+func (w *World) Broadcast(msg string) {
 	for _, player := range w.characters {
 		player.SendMessage(msg)
 	}

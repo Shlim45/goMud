@@ -1,5 +1,11 @@
 package main
 
+import (
+	"fmt"
+	"log"
+	"net"
+)
+
 type SessionHandler struct {
 	world        *World
 	eventChannel <-chan SessionEvent
@@ -37,6 +43,17 @@ func (h *SessionHandler) Start() {
 
 		case *SessionDisconnectedEvent:
 			// remove user
+			user := h.users[sid]
+			if user != nil {
+				h.world.RemoveFromWorld(user.Character)
+
+				delete(h.users, sid)
+
+				if addr, ok := user.Session.conn.RemoteAddr().(*net.TCPAddr); ok {
+					ip := addr.IP.String()
+					log.Println(fmt.Sprintf("Connection disconnected from '%s'", ip))
+				}
+			}
 		case *SessionInputEvent:
 
 			user := h.users[sid]
