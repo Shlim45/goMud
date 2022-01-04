@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 type World struct {
@@ -34,6 +35,20 @@ func (w *World) Init() {
 					Verb:   "west",
 					RoomId: "A",
 				},
+				{
+					Verb:   "east",
+					RoomId: "C",
+				},
+			},
+		},
+		{
+			Id:   "C",
+			Desc: "You're standing in a room with a sign that has the letter C on it.",
+			Links: []*RoomLink{
+				{
+					Verb:   "west",
+					RoomId: "B",
+				},
 			},
 		},
 	}
@@ -43,7 +58,7 @@ func (w *World) HandleCharacterJoined(character *Character) {
 	w.rooms[0].AddCharacter(character)
 
 	character.SendMessage("Welcome to Darkness Falls\n\r")
-	character.SendMessage(character.Room.Desc)
+	character.Room.ShowRoom(character)
 	character.Room.ShowOthers(character, fmt.Sprintf("%s appears in a puff of smoke.", character.Name))
 
 	log.Println(fmt.Sprintf("Character login: %s", character.Name))
@@ -74,20 +89,31 @@ func (w *World) GetRoomById(id string) *Room {
 
 func (w *World) HandleCharacterInput(character *Character, input string) {
 	room := character.Room
-	for _, link := range room.Links {
-		if link.Verb == input {
-			target := w.GetRoomById(link.RoomId)
-			if target != nil {
-				w.MoveCharacter(character, target)
-				return
-			}
-		}
-	}
+	tokens := strings.Split(input, " ")
 
-	character.SendMessage(fmt.Sprintf("You said, '%s'", input))
-	for _, other := range room.Characters {
-		if other != character {
-			other.SendMessage(fmt.Sprintf("%s said, '%s'", character.Name, input))
+	switch tokens[0] {
+	case "say":
+		msg := strings.Trim(input, "say ")
+		character.SendMessage(fmt.Sprintf("You said, '%s'", msg))
+		room.ShowOthers(character, fmt.Sprintf("%s said, '%s'", character.Name, msg))
+
+	case "look":
+		room.ShowRoom(character)
+
+	case "quit":
+
+	default: // direction
+		for _, link := range room.Links {
+			if link.Verb == input {
+				target := w.GetRoomById(link.RoomId)
+				if target != nil {
+					character.SendMessage(fmt.Sprintf("You travel %s.\r\n", link.Verb))
+					room.ShowOthers(character, fmt.Sprintf("%s went %s.", character.Name, link.Verb))
+					w.MoveCharacter(character, target)
+					character.Room.ShowOthers(character, fmt.Sprintf("%s just came in.", character.Name))
+					return
+				}
+			}
 		}
 	}
 }
@@ -95,5 +121,5 @@ func (w *World) HandleCharacterInput(character *Character, input string) {
 func (w *World) MoveCharacter(character *Character, to *Room) {
 	character.Room.RemoveCharacter(character)
 	to.AddCharacter(character)
-	character.SendMessage(to.Desc)
+	to.ShowRoom(character)
 }

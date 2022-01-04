@@ -20,6 +20,21 @@ func NewSessionHandler(world *World, eventChannel <-chan SessionEvent) *SessionH
 	}
 }
 
+func (s *Session) DisconnectSession(world *World, users map[string]*User) {
+	sid := s.SessionId()
+	user := users[sid]
+	if user != nil {
+		world.RemoveFromWorld(user.Character)
+
+		delete(users, sid)
+
+		if addr, ok := s.conn.RemoteAddr().(*net.TCPAddr); ok {
+			ip := addr.IP.String()
+			log.Println(fmt.Sprintf("Connection disconnected from '%s'", ip))
+		}
+	}
+}
+
 func (h *SessionHandler) Start() {
 	for sessionEvent := range h.eventChannel {
 		session := sessionEvent.Session
@@ -43,17 +58,8 @@ func (h *SessionHandler) Start() {
 
 		case *SessionDisconnectedEvent:
 			// remove user
-			user := h.users[sid]
-			if user != nil {
-				h.world.RemoveFromWorld(user.Character)
+			session.DisconnectSession(h.world, h.users)
 
-				delete(h.users, sid)
-
-				if addr, ok := user.Session.conn.RemoteAddr().(*net.TCPAddr); ok {
-					ip := addr.IP.String()
-					log.Println(fmt.Sprintf("Connection disconnected from '%s'", ip))
-				}
-			}
 		case *SessionInputEvent:
 
 			user := h.users[sid]
