@@ -41,9 +41,16 @@ func (w *World) HandleCharacterJoined(character *Character) {
 
 	character.SendMessage("Welcome to Darkness Falls\n\r")
 	character.SendMessage(character.Room.Desc)
+	w.Broadcast(fmt.Sprintf("%s appears in a puff of smoke.", character.Name), character.Room)
 }
 
-func (w *World) Broadcast(msg string) {
+func (w *World) Broadcast(msg string, room *Room) {
+	if room != nil {
+		for _, player := range room.Characters {
+			player.SendMessage(msg)
+		}
+		return
+	}
 	for _, player := range w.characters {
 		player.SendMessage(msg)
 	}
