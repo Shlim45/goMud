@@ -19,14 +19,14 @@ type Room struct {
 
 func (r *Room) Show(source *Player, msg string) {
 	for _, player := range r.Characters {
-		player.SendMessage(msg)
+		player.SendMessage(msg, true)
 	}
 }
 
 func (r *Room) ShowOthers(source *Player, msg string) {
 	for _, player := range r.Characters {
 		if player != nil && player != source {
-			player.SendMessage(msg)
+			player.SendMessage(msg, true)
 		}
 	}
 }
@@ -71,7 +71,7 @@ func (r *Room) ShowRoom(character *Player) {
 		}
 	}
 
-	character.SendMessage(output.String())
+	character.SendMessage(output.String(), true)
 }
 
 func (r *Room) AddCharacter(character *Player) {

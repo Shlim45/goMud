@@ -48,33 +48,6 @@ type Mob interface {
 	setLevel(newLevel uint8)
 }
 
-type PhyStats struct {
-	Level        uint8
-	Attack       uint16
-	Damage       uint16
-	Evasion      uint16
-	Defense      uint16
-	MagicAttack  uint16
-	MagicDamage  uint16
-	MagicEvasion uint16
-	MagicDefense uint16
-}
-
-func (pStats *PhyStats) copyOf() *PhyStats {
-	copyOf := PhyStats{
-		Level:        pStats.Level,
-		Attack:       pStats.Attack,
-		Damage:       pStats.Damage,
-		Evasion:      pStats.Evasion,
-		Defense:      pStats.Defense,
-		MagicAttack:  pStats.MagicAttack,
-		MagicDamage:  pStats.MagicDamage,
-		MagicEvasion: pStats.MagicEvasion,
-		MagicDefense: pStats.MagicDefense,
-	}
-	return &copyOf
-}
-
 type CharState struct {
 	Hits     uint16
 	Fat      uint16

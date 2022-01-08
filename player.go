@@ -14,9 +14,11 @@ type Player struct {
 	MaxState     *CharState
 	BasePhyStats *PhyStats
 	CurPhyStats  *PhyStats
+	Experience   uint32
 }
 
 func (p *Player) Init() {
+	p.Experience = 0
 	rand.Seed(time.Now().UnixMilli())
 	baseStats := PhyStats{
 		Attack:       uint16(rand.Intn(11)),
@@ -27,6 +29,7 @@ func (p *Player) Init() {
 		MagicDamage:  uint16(rand.Intn(11)),
 		MagicEvasion: uint16(rand.Intn(11)),
 		MagicDefense: uint16(rand.Intn(11)),
+		Level:        1 + uint8(p.Experience/1000),
 	}
 	p.BasePhyStats = &baseStats
 	p.CurPhyStats = baseStats.copyOf()
@@ -44,7 +47,10 @@ func (p *Player) Init() {
 	p.CurState = baseState.copyOf()
 }
 
-func (p *Player) SendMessage(msg string) {
+func (p *Player) SendMessage(msg string, newLine bool) {
+	if newLine {
+		msg = "\r\n" + msg
+	}
 	p.User.Session.WriteLine(msg)
 }
 
@@ -73,11 +79,11 @@ func (p *Player) recoverCharState() {
 }
 
 func (p *Player) level() uint8 {
-	return p.curPhyStats().Level
+	return p.curPhyStats().level()
 }
 
 func (p *Player) setLevel(newLevel uint8) {
-	p.basePhyStats().Level = newLevel
+	p.basePhyStats().setLevel(newLevel)
 	p.recoverPhyStats()
 }
 
@@ -114,7 +120,7 @@ func (p *Player) adjMaxHits(amount int16) {
 }
 
 func (p *Player) adjMaxFat(amount uint16) {
-	var newFat int32 = int32(p.MaxState.Fat) + int32(amount)
+	newFat := int32(p.MaxState.Fat) + int32(amount)
 	if newFat < 0 {
 		newFat = 0
 	}
@@ -122,7 +128,7 @@ func (p *Player) adjMaxFat(amount uint16) {
 }
 
 func (p *Player) adjMaxPower(amount uint16) {
-	var newPower int32 = int32(p.MaxState.Power) + int32(amount)
+	newPower := int32(p.MaxState.Power) + int32(amount)
 	if newPower < 0 {
 		newPower = 0
 	}
@@ -131,13 +137,13 @@ func (p *Player) adjMaxPower(amount uint16) {
 
 func (p *Player) attackTarget(target *Player) {
 	if target == nil {
-		p.SendMessage("You must specify a target.")
+		p.SendMessage("You must specify a target.", true)
 	}
 	if !p.curState().Alive {
-		p.SendMessage("You must be alive to do that!")
+		p.SendMessage("You must be alive to do that!", true)
 		return
 	} else if !target.curState().Alive {
-		p.SendMessage(fmt.Sprintf("%s is already dead!", target.Name))
+		p.SendMessage(fmt.Sprintf("%s is already dead!", target.Name), true)
 		return
 	}
 
@@ -149,25 +155,40 @@ func (p *Player) attackTarget(target *Player) {
 	}
 
 	if chance > 0 {
-		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %d damage.", target.Name, damage))
-		target.SendMessage(fmt.Sprintf("%s attacks you with your bare hands!  You are hit for %d damage.", p.Name, damage))
-		p.Room.ShowOthers(p, fmt.Sprintf("%s attacks %s with their bare hands!", p.Name, target.Name))
+		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %d damage.",
+			target.Name, damage), true)
+		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %d damage.",
+			p.Name, damage), true)
+		p.Room.ShowOthers(p, fmt.Sprintf("%s attacks %s with their bare hands!\r\n", p.Name, target.Name))
 		target.damagePlayer(uint16(damage))
 	} else {
-		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name))
+		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name), true)
 	}
 }
 
 func (p *Player) damagePlayer(dmg uint16) {
 	if (p.curState().Hits == 0) && (dmg > 0) {
 		p.CurState.Alive = false
-		p.SendMessage("You were just killed!")
+		p.SendMessage("You were just killed!", true)
 		p.Room.ShowOthers(p, fmt.Sprintf("%s was just killed!", p.Name))
 		return
 	}
 
 	p.adjHits(int16(-dmg))
 	if p.curState().Hits == 0 {
-		p.SendMessage("You are almost dead!")
+		p.SendMessage("You are almost dead!", true)
+	}
+}
+
+func (p *Player) recallCorpse(w *World) {
+	p.recoverCharState()
+	p.recoverPhyStats()
+	target := w.GetRoomById("A")
+	if target != nil {
+		p.SendMessage("You recall your corpse!", true)
+		p.Room.ShowOthers(p, fmt.Sprintf("%s recalls their corpse!", p.Name))
+		w.MoveCharacter(p, target)
+		p.Room.ShowOthers(p, fmt.Sprintf("%s appears in a puff of smoke.", p.Name))
+		return
 	}
 }
