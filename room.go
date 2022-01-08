@@ -10,9 +10,10 @@ type RoomLink struct {
 }
 
 type Room struct {
-	Id    string
-	Desc  string
-	Links []*RoomLink
+	Id      string
+	Desc    string
+	Links   []*RoomLink
+	Portals []*RoomLink
 
 	Characters []*Player
 }
@@ -52,6 +53,21 @@ func (r *Room) ShowRoom(character *Player) {
 				} else {
 					output.WriteString(".\r\n")
 				}
+			}
+		}
+	}
+
+	numPortals := len(r.Portals)
+	if numPortals > 0 {
+		count := 0
+		output.WriteString("You also see ")
+		for _, portal := range r.Portals {
+			output.WriteString("a " + portal.Verb)
+			count++
+			if count < numPortals {
+				output.WriteString(", ")
+			} else {
+				output.WriteString(".\r\n")
 			}
 		}
 	}

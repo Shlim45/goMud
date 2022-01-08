@@ -26,6 +26,7 @@ func (w *World) Init() {
 					RoomId: "B",
 				},
 			},
+			Portals: []*RoomLink{},
 		},
 		{
 			Id:   "B",
@@ -40,6 +41,12 @@ func (w *World) Init() {
 					RoomId: "C",
 				},
 			},
+			Portals: []*RoomLink{
+				{
+					Verb:   "gate",
+					RoomId: "D",
+				},
+			},
 		},
 		{
 			Id:   "C",
@@ -47,6 +54,18 @@ func (w *World) Init() {
 			Links: []*RoomLink{
 				{
 					Verb:   "west",
+					RoomId: "B",
+				},
+			},
+			Portals: []*RoomLink{},
+		},
+		{
+			Id:    "D",
+			Desc:  "You're standing in a room hidden behind a gate.  There is a sign that has the letter D on it.",
+			Links: []*RoomLink{},
+			Portals: []*RoomLink{
+				{
+					Verb:   "gate",
 					RoomId: "B",
 				},
 			},
@@ -193,7 +212,43 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 		player.SendMessage(output.String(), true)
 
 	case "quit":
-		player.SendMessage("Not working yet, Ctrl+] to quit from telnet prompt", true)
+		player.SendMessage("Not working yet, Ctrl+] to quit from telnet prompt.", true)
+
+	case "go":
+		if len(tokens) < 2 {
+			player.SendMessage("Go where?  Syntax: GO <EXIT>", true)
+			return
+		}
+
+		targetPortal := strings.Join(tokens[1:], " ")
+
+		for _, portal := range room.Portals {
+			if portal.Verb == targetPortal || strings.HasPrefix(portal.Verb, targetPortal) {
+				target := w.GetRoomById(portal.RoomId)
+				if target != nil {
+					player.SendMessage(fmt.Sprintf("You travel into a %s.", portal.Verb), true)
+					room.ShowOthers(player, fmt.Sprintf("%s went into a %s.", player.Name, portal.Verb))
+					w.MoveCharacter(player, target)
+					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
+					return
+				}
+			}
+		}
+
+		for _, link := range room.Links {
+			if link.Verb == targetPortal || strings.HasPrefix(link.Verb, targetPortal) {
+				target := w.GetRoomById(link.RoomId)
+				if target != nil {
+					player.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
+					room.ShowOthers(player, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
+					w.MoveCharacter(player, target)
+					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
+					return
+				}
+			}
+		}
+
+		player.SendMessage(fmt.Sprintf("There isn't a '%s' here.", targetPortal), true)
 
 	default: // direction
 		if !player.curState().Alive {
@@ -201,7 +256,6 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 			return
 		}
 
-		movedPlayer := false
 		for _, link := range room.Links {
 			if link.Verb == input || strings.HasPrefix(link.Verb, input) {
 				target := w.GetRoomById(link.RoomId)
@@ -210,14 +264,11 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 					room.ShowOthers(player, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
 					w.MoveCharacter(player, target)
 					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
-					movedPlayer = true
 					return
 				}
 			}
 		}
 
-		if !movedPlayer {
-			player.SendMessage(fmt.Sprintf("Huh?  Command or Exit '%s' not found.", input), true)
-		}
+		player.SendMessage(fmt.Sprintf("Huh?  Command or Exit '%s' not found.", input), true)
 	}
 }
