@@ -45,9 +45,11 @@ func (h *SessionHandler) Start() {
 		case *SessionCreatedEvent:
 			// create user
 
-			character := &Character{
+			character := &Player{
 				Name: generateName(),
 			}
+			character.Init()
+
 			user := &User{session, character}
 			character.User = user
 
@@ -63,7 +65,7 @@ func (h *SessionHandler) Start() {
 		case *SessionInputEvent:
 
 			user := h.users[sid]
-			h.world.HandleCharacterInput(user.Character, event.input)
+			h.world.HandlePlayerInput(user.Character, event.input)
 		}
 	}
 }

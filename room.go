@@ -14,16 +14,16 @@ type Room struct {
 	Desc  string
 	Links []*RoomLink
 
-	Characters []*Character
+	Characters []*Player
 }
 
-func (r *Room) Show(source *Character, msg string) {
+func (r *Room) Show(source *Player, msg string) {
 	for _, player := range r.Characters {
 		player.SendMessage(msg)
 	}
 }
 
-func (r *Room) ShowOthers(source *Character, msg string) {
+func (r *Room) ShowOthers(source *Player, msg string) {
 	for _, player := range r.Characters {
 		if player != nil && player != source {
 			player.SendMessage(msg)
@@ -31,7 +31,7 @@ func (r *Room) ShowOthers(source *Character, msg string) {
 	}
 }
 
-func (r *Room) ShowRoom(character *Character) {
+func (r *Room) ShowRoom(character *Player) {
 	//character.SendMessage(character.Room.Desc)
 	var output strings.Builder
 
@@ -74,19 +74,29 @@ func (r *Room) ShowRoom(character *Character) {
 	character.SendMessage(output.String())
 }
 
-func (r *Room) AddCharacter(character *Character) {
+func (r *Room) AddCharacter(character *Player) {
 	r.Characters = append(r.Characters, character)
 	character.Room = r
 }
 
-func (r *Room) RemoveCharacter(character *Character) {
+func (r *Room) RemoveCharacter(character *Player) {
 	character.Room = nil
 
-	var characters []*Character
+	var characters []*Player
 	for _, c := range r.Characters {
 		if c != character {
 			characters = append(characters, c)
 		}
 	}
 	r.Characters = characters
+}
+
+func (r *Room) FetchInhabitant(mobName string) *Player {
+	mobName = strings.ToLower(mobName)
+	for _, c := range r.Characters {
+		if strings.HasPrefix(strings.ToLower(c.Name), mobName) {
+			return c
+		}
+	}
+	return nil
 }

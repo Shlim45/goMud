@@ -28,17 +28,74 @@ func (e *Entity) EntityId() string {
 
 type User struct {
 	Session   *Session
-	Character *Character
+	Character *Player
 }
 
-type Character struct {
-	Name string
-	User *User
-	Room *Room
+type Mob interface {
+	basePhyStats() *PhyStats
+	curPhyStats() *PhyStats
+	recoverPhyStats()
+	curState() *CharState
+	adjHits(amount uint16)
+	adjFat(amount uint16)
+	adjPower(amount uint16)
+	maxState() *CharState
+	adjMaxHits(amount uint16)
+	adjMaxFat(amount uint16)
+	adjMaxPower(amount uint16)
+	recoverCharState()
+	level()
+	setLevel(newLevel uint8)
 }
 
-func (c *Character) SendMessage(msg string) {
-	c.User.Session.WriteLine(msg)
+type PhyStats struct {
+	Level        uint8
+	Attack       uint16
+	Damage       uint16
+	Evasion      uint16
+	Defense      uint16
+	MagicAttack  uint16
+	MagicDamage  uint16
+	MagicEvasion uint16
+	MagicDefense uint16
+}
+
+func (pStats *PhyStats) copyOf() *PhyStats {
+	copyOf := PhyStats{
+		Level:        pStats.Level,
+		Attack:       pStats.Attack,
+		Damage:       pStats.Damage,
+		Evasion:      pStats.Evasion,
+		Defense:      pStats.Defense,
+		MagicAttack:  pStats.MagicAttack,
+		MagicDamage:  pStats.MagicDamage,
+		MagicEvasion: pStats.MagicEvasion,
+		MagicDefense: pStats.MagicDefense,
+	}
+	return &copyOf
+}
+
+type CharState struct {
+	Hits     uint16
+	Fat      uint16
+	Power    uint16
+	Alive    bool
+	Standing bool
+	Sitting  bool
+	Laying   bool
+}
+
+func (cState *CharState) copyOf() *CharState {
+	copyOf := CharState{
+		Hits:     cState.Hits,
+		Fat:      cState.Fat,
+		Power:    cState.Power,
+		Alive:    cState.Alive,
+		Standing: cState.Standing,
+		Sitting:  cState.Sitting,
+		Laying:   cState.Laying,
+	}
+	return &copyOf
 }
 
 func generateName() string {

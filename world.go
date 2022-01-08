@@ -7,7 +7,7 @@ import (
 )
 
 type World struct {
-	characters []*Character
+	characters []*Player
 	rooms      []*Room
 }
 
@@ -54,22 +54,22 @@ func (w *World) Init() {
 	}
 }
 
-func (w *World) HandleCharacterJoined(character *Character) {
+func (w *World) HandleCharacterJoined(character *Player) {
 	w.rooms[0].AddCharacter(character)
 
 	character.SendMessage("Welcome to Darkness Falls\n\r")
 	character.Room.ShowRoom(character)
 	character.Room.ShowOthers(character, fmt.Sprintf("%s appears in a puff of smoke.", character.Name))
 
-	log.Println(fmt.Sprintf("Character login: %s", character.Name))
+	log.Println(fmt.Sprintf("Player login: %s", character.Name))
 }
 
-func (w *World) RemoveFromWorld(character *Character) {
+func (w *World) RemoveFromWorld(character *Player) {
 	room := character.Room
 	room.RemoveCharacter(character)
 	room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name))
 
-	log.Println(fmt.Sprintf("Character logout: %s", character.Name))
+	log.Println(fmt.Sprintf("Player logout: %s", character.Name))
 }
 
 func (w *World) Broadcast(msg string) {
@@ -87,23 +87,51 @@ func (w *World) GetRoomById(id string) *Room {
 	return nil
 }
 
-func (w *World) HandleCharacterInput(character *Character, input string) {
-	room := character.Room
+func (w *World) HandlePlayerInput(player *Player, input string) {
+	room := player.Room
 	tokens := strings.Split(input, " ")
 
 	switch tokens[0] {
 	case "say":
 		msg := strings.Trim(input, "say ")
-		character.SendMessage(fmt.Sprintf("You said, '%s'", msg))
-		room.ShowOthers(character, fmt.Sprintf("%s said, '%s'", character.Name, msg))
+		player.SendMessage(fmt.Sprintf("You said, '%s'", msg))
+		room.ShowOthers(player, fmt.Sprintf("%s said, '%s'", player.Name, msg))
 
 	case "look":
-		room.ShowRoom(character)
+		room.ShowRoom(player)
 
 	case "rename":
 		newName := tokens[len(tokens)-1]
-		character.Name = newName
-		character.SendMessage(fmt.Sprintf("Your name has been changed to %s.", character.Name))
+		player.Name = newName
+		player.SendMessage(fmt.Sprintf("Your name has been changed to %s.", player.Name))
+
+	case "restat":
+		player.Init()
+		player.SendMessage("Your stats have been randomized and vitals have been reset to default.")
+
+	case "stats":
+		player.SendMessage(fmt.Sprintf("   Att:\t%d Dam:\t%d Eva:\t%d Def:\t%d",
+			player.CurPhyStats.Attack, player.CurPhyStats.Damage,
+			player.CurPhyStats.Evasion, player.CurPhyStats.Defense))
+		player.SendMessage(fmt.Sprintf("MagAtt:\t%d MagDam:\t%d MagEva:\t%d MagDef:\t%d",
+			player.CurPhyStats.MagicAttack, player.CurPhyStats.MagicDamage,
+			player.CurPhyStats.MagicEvasion, player.CurPhyStats.MagicDefense))
+
+	case "health":
+		player.SendMessage(fmt.Sprintf("   Hits: %d/%d     Fat: %d/%d     Pow: %d/%d",
+			player.curState().Hits, player.maxState().Hits,
+			player.curState().Fat, player.maxState().Fat,
+			player.curState().Power, player.maxState().Power))
+
+	case "hit":
+		if len(tokens) > 1 {
+			target := room.FetchInhabitant(tokens[len(tokens)-1])
+			if target != nil {
+				player.attackTarget(target)
+			} else {
+				player.SendMessage("You don't see them here.")
+			}
+		}
 
 	case "quit":
 
@@ -112,10 +140,10 @@ func (w *World) HandleCharacterInput(character *Character, input string) {
 			if link.Verb == input {
 				target := w.GetRoomById(link.RoomId)
 				if target != nil {
-					character.SendMessage(fmt.Sprintf("You travel %s.\r\n", link.Verb))
-					room.ShowOthers(character, fmt.Sprintf("%s went %s.", character.Name, link.Verb))
-					w.MoveCharacter(character, target)
-					character.Room.ShowOthers(character, fmt.Sprintf("%s just came in.", character.Name))
+					player.SendMessage(fmt.Sprintf("You travel %s.\r\n", link.Verb))
+					room.ShowOthers(player, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
+					w.MoveCharacter(player, target)
+					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
 					return
 				}
 			}
@@ -123,7 +151,7 @@ func (w *World) HandleCharacterInput(character *Character, input string) {
 	}
 }
 
-func (w *World) MoveCharacter(character *Character, to *Room) {
+func (w *World) MoveCharacter(character *Player, to *Room) {
 	character.Room.RemoveCharacter(character)
 	to.AddCharacter(character)
 	to.ShowRoom(character)
