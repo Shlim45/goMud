@@ -7,37 +7,51 @@ import (
 )
 
 type Player struct {
-	Name         string
-	User         *User
-	Room         *Room
-	CurState     *CharState
-	MaxState     *CharState
-	BasePhyStats *PhyStats
-	CurPhyStats  *PhyStats
-	Experience   uint32
+	Name          string
+	User          *User
+	Room          *Room
+	CurState      *CharState
+	MaxState      *CharState
+	BasePhyStats  *PhyStats
+	CurPhyStats   *PhyStats
+	BaseCharStats *CharStats
+	CurCharStats  *CharStats
+	Experience    uint32
 }
 
 func (p *Player) Init() {
 	p.Experience = 0
 	rand.Seed(time.Now().UnixMilli())
+
+	baseCStats := CharStats{
+		Strength:     uint8(rand.Intn(17) + 4),
+		Constitution: uint8(rand.Intn(17) + 4),
+		Agility:      uint8(rand.Intn(17) + 4),
+		Dexterity:    uint8(rand.Intn(17) + 4),
+		Intelligence: uint8(rand.Intn(17) + 4),
+		Wisdom:       uint8(rand.Intn(17) + 4),
+	}
+	p.BaseCharStats = &baseCStats
+	p.CurCharStats = baseCStats.copyOf()
+
 	baseStats := PhyStats{
-		Attack:       uint16(rand.Intn(11)),
-		Damage:       uint16(rand.Intn(11)),
-		Evasion:      uint16(rand.Intn(11)),
-		Defense:      uint16(rand.Intn(11)),
-		MagicAttack:  uint16(rand.Intn(11)),
-		MagicDamage:  uint16(rand.Intn(11)),
-		MagicEvasion: uint16(rand.Intn(11)),
-		MagicDefense: uint16(rand.Intn(11)),
+		Attack:       uint16(5 * (p.BaseCharStats.dexterity() / 10.0)),
+		Damage:       uint16(5 * (p.BaseCharStats.strength() / 10.0)),
+		Evasion:      uint16(5 * (p.BaseCharStats.agility() / 10.0)),
+		Defense:      uint16(5 * (p.BaseCharStats.constitution() / 10.0)),
+		MagicAttack:  uint16(5 * (p.BaseCharStats.wisdom() / 10.0)),
+		MagicDamage:  uint16(5 * (p.BaseCharStats.intelligence() / 10.0)),
+		MagicEvasion: uint16(3 * (p.BaseCharStats.wisdom() / 4.0)),
+		MagicDefense: uint16(3 * (p.BaseCharStats.intelligence() / 4.0)),
 		Level:        1 + uint8(p.Experience/1000),
 	}
 	p.BasePhyStats = &baseStats
 	p.CurPhyStats = baseStats.copyOf()
 
 	baseState := CharState{
-		Hits:     30,
-		Fat:      30,
-		Power:    20,
+		Hits:     uint16(30 * (p.BaseCharStats.constitution() / 10.0)),
+		Fat:      uint16(30 * (p.BaseCharStats.constitution() / 10.0)),
+		Power:    uint16(20 * (p.BaseCharStats.intelligence() / 10.0)),
 		Alive:    true,
 		Standing: true,
 		Sitting:  false,
@@ -78,6 +92,18 @@ func (p *Player) recoverCharState() {
 	p.CurState = p.MaxState.copyOf()
 }
 
+func (p *Player) curCharStats() *CharStats {
+	return p.CurCharStats
+}
+
+func (p *Player) baseCharStats() *CharStats {
+	return p.BaseCharStats
+}
+
+func (p *Player) recoverCharStats() {
+	p.CurCharStats = p.BaseCharStats.copyOf()
+}
+
 func (p *Player) level() uint8 {
 	return p.curPhyStats().level()
 }
@@ -92,7 +118,7 @@ func (p *Player) adjHits(amount int16) {
 	if newHits < 0 {
 		newHits = 0
 	}
-	p.CurState.Hits = uint16(newHits)
+	p.CurState.setHits(uint16(newHits))
 }
 
 func (p *Player) adjFat(amount int16) {
@@ -100,7 +126,7 @@ func (p *Player) adjFat(amount int16) {
 	if newFat < 0 {
 		newFat = 0
 	}
-	p.CurState.Fat = uint16(newFat)
+	p.CurState.setFat(uint16(newFat))
 }
 
 func (p *Player) adjPower(amount int16) {
@@ -108,7 +134,7 @@ func (p *Player) adjPower(amount int16) {
 	if newPower < 0 {
 		newPower = 0
 	}
-	p.CurState.Power = uint16(newPower)
+	p.CurState.setPower(uint16(newPower))
 }
 
 func (p *Player) adjMaxHits(amount int16) {
@@ -116,7 +142,7 @@ func (p *Player) adjMaxHits(amount int16) {
 	if newHits < 0 {
 		newHits = 0
 	}
-	p.MaxState.Hits = uint16(newHits)
+	p.MaxState.setHits(uint16(newHits))
 }
 
 func (p *Player) adjMaxFat(amount uint16) {
@@ -124,7 +150,7 @@ func (p *Player) adjMaxFat(amount uint16) {
 	if newFat < 0 {
 		newFat = 0
 	}
-	p.MaxState.Fat = uint16(newFat)
+	p.MaxState.setFat(uint16(newFat))
 }
 
 func (p *Player) adjMaxPower(amount uint16) {
@@ -132,7 +158,7 @@ func (p *Player) adjMaxPower(amount uint16) {
 	if newPower < 0 {
 		newPower = 0
 	}
-	p.MaxState.Power = uint16(newPower)
+	p.MaxState.setPower(uint16(newPower))
 }
 
 func (p *Player) attackTarget(target *Player) {
@@ -155,11 +181,11 @@ func (p *Player) attackTarget(target *Player) {
 	}
 
 	if chance > 0 {
-		outDamage := DamageOut(fmt.Sprintf("%d", damage))
+		outDamage := CDamageOut(fmt.Sprintf("%d", damage))
 		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %s damage.",
 			target.Name, outDamage), true)
 
-		inDamage := DamageIn(fmt.Sprintf("%d", damage))
+		inDamage := CDamageIn(fmt.Sprintf("%d", damage))
 		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %s damage.",
 			p.Name, inDamage), true)
 
@@ -172,7 +198,7 @@ func (p *Player) attackTarget(target *Player) {
 
 func (p *Player) damagePlayer(dmg uint16) {
 	if (p.curState().Hits == 0) && (dmg > 0) {
-		p.CurState.Alive = false
+		p.CurState.setAlive(false)
 		p.SendMessage("You were just killed!", true)
 		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s was just killed!", p.Name))
 		return

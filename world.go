@@ -207,6 +207,15 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 		exp := fmt.Sprintf("Experience:    %d\r\n", player.Experience)
 		output.WriteString(exp)
 
+		output.WriteString(Yellow("\r\n                  Score   Bonus\r\n"))
+		output.WriteString("                  -----   -----\r\n")
+		output.WriteString(fmt.Sprintf("Strength:         %2v\r\n", player.curCharStats().strength()))
+		output.WriteString(fmt.Sprintf("Constitution:     %2v\r\n", player.curCharStats().constitution()))
+		output.WriteString(fmt.Sprintf("Agility:          %2v\r\n", player.curCharStats().agility()))
+		output.WriteString(fmt.Sprintf("Dexterity:        %2v\r\n", player.curCharStats().dexterity()))
+		output.WriteString(fmt.Sprintf("Intelligence:     %2v\r\n", player.curCharStats().intelligence()))
+		output.WriteString(fmt.Sprintf("Wisdom:           %2v\r\n", player.curCharStats().wisdom()))
+
 		output.WriteString("\r\nTry STATS or HEALTH commands.")
 
 		player.SendMessage(output.String(), true)

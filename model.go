@@ -30,26 +30,3 @@ type Mob interface {
 	level()
 	setLevel(newLevel uint8)
 }
-
-type CharState struct {
-	Hits     uint16
-	Fat      uint16
-	Power    uint16
-	Alive    bool
-	Standing bool
-	Sitting  bool
-	Laying   bool
-}
-
-func (cState *CharState) copyOf() *CharState {
-	copyOf := CharState{
-		Hits:     cState.Hits,
-		Fat:      cState.Fat,
-		Power:    cState.Power,
-		Alive:    cState.Alive,
-		Standing: cState.Standing,
-		Sitting:  cState.Sitting,
-		Laying:   cState.Laying,
-	}
-	return &copyOf
-}

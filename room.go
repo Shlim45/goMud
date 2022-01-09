@@ -36,8 +36,8 @@ func (r *Room) ShowRoom(character *Player) {
 	//character.SendMessage(character.Room.Desc)
 	var output strings.Builder
 
-	output.WriteString("[" + Area("Darkness Falls") + "]\r\n") // area name
-	output.WriteString(Normal(character.Room.Desc))
+	output.WriteString("[" + CArea("Darkness Falls") + "]\r\n") // area name
+	output.WriteString(CNormal(character.Room.Desc))
 	output.WriteString("\r\n")
 
 	numOthers := len(r.Characters) - 1
@@ -46,7 +46,7 @@ func (r *Room) ShowRoom(character *Player) {
 		output.WriteString("\r\nAlso there is ")
 		for _, other := range r.Characters {
 			if other != character {
-				output.WriteString(Friend(other.Name))
+				output.WriteString(CFriend(other.Name))
 				count++
 				if count < numOthers {
 					output.WriteString(", ")
@@ -62,7 +62,7 @@ func (r *Room) ShowRoom(character *Player) {
 		count := 0
 		output.WriteString("You also see ")
 		for _, portal := range r.Portals {
-			output.WriteString("a " + Exit(portal.Verb))
+			output.WriteString("a " + CExit(portal.Verb))
 			count++
 			if count < numPortals {
 				output.WriteString(", ")

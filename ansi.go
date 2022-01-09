@@ -3,16 +3,16 @@ package main
 import "fmt"
 
 var (
-	Friend    = Green
-	Enemy     = Red
-	Item      = BrightYellow
-	Exit      = Yellow
-	DamageIn  = BrightRed
-	DamageOut = Green
-	Healing   = BrightGreen
-	Area      = Red
-	Sigil     = Cyan
-	Normal    = White
+	CFriend    = Green
+	CEnemy     = Red
+	CItem      = BrightYellow
+	CExit      = Yellow
+	CDamageIn  = BrightRed
+	CDamageOut = Green
+	CHealing   = BrightGreen
+	CArea      = Red
+	CSigil     = Cyan
+	CNormal    = White
 )
 
 var (
