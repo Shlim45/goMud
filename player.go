@@ -89,7 +89,7 @@ func (p *Player) maxState() *CharState {
 }
 
 func (p *Player) recoverCharState() {
-	p.CurState = p.MaxState.copyOf()
+	p.CurState = p.maxState().copyOf()
 }
 
 func (p *Player) curCharStats() *CharStats {
@@ -114,67 +114,67 @@ func (p *Player) setLevel(newLevel uint8) {
 }
 
 func (p *Player) adjHits(amount int16) {
-	newHits := int32(p.CurState.Hits) + int32(amount)
+	newHits := int32(p.curState().hits()) + int32(amount)
 	if newHits < 0 {
 		newHits = 0
 	}
-	p.CurState.setHits(uint16(newHits))
+	p.curState().setHits(uint16(newHits))
 }
 
 func (p *Player) adjFat(amount int16) {
-	newFat := int32(p.CurState.Fat) + int32(amount)
+	newFat := int32(p.curState().fat()) + int32(amount)
 	if newFat < 0 {
 		newFat = 0
 	}
-	p.CurState.setFat(uint16(newFat))
+	p.curState().setFat(uint16(newFat))
 }
 
 func (p *Player) adjPower(amount int16) {
-	newPower := int32(p.CurState.Power) + int32(amount)
+	newPower := int32(p.curState().power()) + int32(amount)
 	if newPower < 0 {
 		newPower = 0
 	}
-	p.CurState.setPower(uint16(newPower))
+	p.curState().setPower(uint16(newPower))
 }
 
 func (p *Player) adjMaxHits(amount int16) {
-	newHits := int32(p.MaxState.Hits) + int32(amount)
+	newHits := int32(p.maxState().hits()) + int32(amount)
 	if newHits < 0 {
 		newHits = 0
 	}
-	p.MaxState.setHits(uint16(newHits))
+	p.maxState().setHits(uint16(newHits))
 }
 
 func (p *Player) adjMaxFat(amount uint16) {
-	newFat := int32(p.MaxState.Fat) + int32(amount)
+	newFat := int32(p.maxState().fat()) + int32(amount)
 	if newFat < 0 {
 		newFat = 0
 	}
-	p.MaxState.setFat(uint16(newFat))
+	p.maxState().setFat(uint16(newFat))
 }
 
 func (p *Player) adjMaxPower(amount uint16) {
-	newPower := int32(p.MaxState.Power) + int32(amount)
+	newPower := int32(p.maxState().power()) + int32(amount)
 	if newPower < 0 {
 		newPower = 0
 	}
-	p.MaxState.setPower(uint16(newPower))
+	p.maxState().setPower(uint16(newPower))
 }
 
 func (p *Player) attackTarget(target *Player) {
 	if target == nil {
 		p.SendMessage("You must specify a target.", true)
 	}
-	if !p.curState().Alive {
+	if !p.curState().alive() {
 		p.SendMessage("You must be alive to do that!", true)
 		return
-	} else if !target.curState().Alive {
+	} else if !target.curState().alive() {
 		p.SendMessage(fmt.Sprintf("%s is already dead!", target.Name), true)
 		return
 	}
 
-	damage := int(p.curPhyStats().Damage) - int(target.curPhyStats().Defense)
-	chance := int(p.curPhyStats().Attack) - int(target.curPhyStats().Evasion)
+	damage := int(p.curPhyStats().damage()) - int(target.curPhyStats().defense())
+	chance := int(p.curPhyStats().attack()) - int(target.curPhyStats().evasion())
 
 	if damage < 0 {
 		damage = 0
@@ -197,15 +197,15 @@ func (p *Player) attackTarget(target *Player) {
 }
 
 func (p *Player) damagePlayer(dmg uint16) {
-	if (p.curState().Hits == 0) && (dmg > 0) {
-		p.CurState.setAlive(false)
+	if (p.curState().hits() == 0) && (dmg > 0) {
+		p.curState().setAlive(false)
 		p.SendMessage("You were just killed!", true)
 		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s was just killed!", p.Name))
 		return
 	}
 
 	p.adjHits(int16(-dmg))
-	if p.curState().Hits == 0 {
+	if p.curState().hits() == 0 {
 		p.SendMessage("You are almost dead!", true)
 	}
 }
