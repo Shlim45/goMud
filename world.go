@@ -78,7 +78,7 @@ func (w *World) HandleCharacterJoined(character *Player) {
 
 	character.SendMessage("Welcome to Darkness Falls\n\r", true)
 	character.Room.ShowRoom(character)
-	character.Room.ShowOthers(character, fmt.Sprintf("%s appears in a puff of smoke.", character.Name))
+	character.Room.ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name))
 
 	log.Println(fmt.Sprintf("Player login: %s", character.Name))
 }
@@ -120,7 +120,7 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "say":
 		msg := strings.Trim(input, "say ")
 		player.SendMessage(fmt.Sprintf("You said, '%s'", msg), true)
-		room.ShowOthers(player, fmt.Sprintf("%s said, '%s'", player.Name, msg))
+		room.ShowOthers(player, nil, fmt.Sprintf("%s said, '%s'", player.Name, msg))
 
 	case "look":
 		room.ShowRoom(player)
@@ -227,9 +227,9 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 				target := w.GetRoomById(portal.RoomId)
 				if target != nil {
 					player.SendMessage(fmt.Sprintf("You travel into a %s.", portal.Verb), true)
-					room.ShowOthers(player, fmt.Sprintf("%s went into a %s.", player.Name, portal.Verb))
+					room.ShowOthers(player, nil, fmt.Sprintf("%s went into a %s.", player.Name, portal.Verb))
 					w.MoveCharacter(player, target)
-					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
+					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name))
 					return
 				}
 			}
@@ -240,9 +240,9 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 				target := w.GetRoomById(link.RoomId)
 				if target != nil {
 					player.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
-					room.ShowOthers(player, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
+					room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
 					w.MoveCharacter(player, target)
-					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
+					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name))
 					return
 				}
 			}
@@ -261,9 +261,9 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 				target := w.GetRoomById(link.RoomId)
 				if target != nil {
 					player.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
-					room.ShowOthers(player, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
+					room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
 					w.MoveCharacter(player, target)
-					player.Room.ShowOthers(player, fmt.Sprintf("%s just came in.", player.Name))
+					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name))
 					return
 				}
 			}

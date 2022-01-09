@@ -6,6 +6,19 @@ import (
 	"net"
 )
 
+type SessionEvent struct {
+	Session *Session
+	Event   interface{}
+}
+
+type SessionCreatedEvent struct{}
+
+type SessionDisconnectedEvent struct{}
+
+type SessionInputEvent struct {
+	input string
+}
+
 type SessionHandler struct {
 	world        *World
 	eventChannel <-chan SessionEvent
@@ -50,7 +63,7 @@ func (h *SessionHandler) Start() {
 			}
 			character.Init()
 
-			user := &User{session, character}
+			user := &User{session, character, true}
 			character.User = user
 
 			h.users[sid] = user

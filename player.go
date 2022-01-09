@@ -155,11 +155,15 @@ func (p *Player) attackTarget(target *Player) {
 	}
 
 	if chance > 0 {
-		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %d damage.",
-			target.Name, damage), true)
-		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %d damage.",
-			p.Name, damage), true)
-		p.Room.ShowOthers(p, fmt.Sprintf("%s attacks %s with their bare hands!\r\n", p.Name, target.Name))
+		outDamage := DamageOut(fmt.Sprintf("%d", damage))
+		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %s damage.",
+			target.Name, outDamage), true)
+
+		inDamage := DamageIn(fmt.Sprintf("%d", damage))
+		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %s damage.",
+			p.Name, inDamage), true)
+
+		p.Room.ShowOthers(p, target, fmt.Sprintf("%s attacks %s with their bare hands!\r\n", p.Name, target.Name))
 		target.damagePlayer(uint16(damage))
 	} else {
 		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name), true)
@@ -170,7 +174,7 @@ func (p *Player) damagePlayer(dmg uint16) {
 	if (p.curState().Hits == 0) && (dmg > 0) {
 		p.CurState.Alive = false
 		p.SendMessage("You were just killed!", true)
-		p.Room.ShowOthers(p, fmt.Sprintf("%s was just killed!", p.Name))
+		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s was just killed!", p.Name))
 		return
 	}
 
@@ -186,9 +190,13 @@ func (p *Player) recallCorpse(w *World) {
 	target := w.GetRoomById("A")
 	if target != nil {
 		p.SendMessage("You recall your corpse!", true)
-		p.Room.ShowOthers(p, fmt.Sprintf("%s recalls their corpse!", p.Name))
+		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s recalls their corpse!", p.Name))
 		w.MoveCharacter(p, target)
-		p.Room.ShowOthers(p, fmt.Sprintf("%s appears in a puff of smoke.", p.Name))
+		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s appears in a puff of smoke.", p.Name))
 		return
 	}
+}
+
+func generateName() string {
+	return fmt.Sprintf("User %d", rand.Intn(100)+1)
 }

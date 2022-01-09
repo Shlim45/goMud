@@ -1,23 +1,5 @@
 package main
 
-import (
-	"fmt"
-	"math/rand"
-)
-
-type SessionEvent struct {
-	Session *Session
-	Event   interface{}
-}
-
-type SessionCreatedEvent struct{}
-
-type SessionDisconnectedEvent struct{}
-
-type SessionInputEvent struct {
-	input string
-}
-
 type Entity struct {
 	entityId string
 }
@@ -29,6 +11,7 @@ func (e *Entity) EntityId() string {
 type User struct {
 	Session   *Session
 	Character *Player
+	ANSI      bool
 }
 
 type Mob interface {
@@ -70,19 +53,3 @@ func (cState *CharState) copyOf() *CharState {
 	}
 	return &copyOf
 }
-
-func generateName() string {
-	return fmt.Sprintf("User %d", rand.Intn(100)+1)
-}
-
-//
-//type MessageEvent struct {
-//	msg string
-//}
-//
-//type MoveEvent struct {
-//	dir string
-//}
-//
-//type UserJoinedEvent struct {
-//}
