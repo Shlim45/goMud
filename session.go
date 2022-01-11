@@ -6,6 +6,21 @@ import (
 	"net"
 )
 
+type Session struct {
+	id   string
+	conn net.Conn
+}
+
+func (s *Session) SessionId() string {
+	return s.id
+}
+
+// TODO(jon): non-blocking write to session
+func (s *Session) WriteLine(str string) error {
+	_, err := s.conn.Write([]byte(str + "\r\n"))
+	return err
+}
+
 type SessionEvent struct {
 	Session *Session
 	Event   interface{}
@@ -59,7 +74,7 @@ func (h *SessionHandler) Start() {
 			// create user
 
 			character := &Player{
-				Name: generateName(),
+				name: generateName(),
 			}
 			character.Init()
 

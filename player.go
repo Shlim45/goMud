@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 )
 
 type Player struct {
-	Name          string
+	name          string
 	User          *User
 	Room          *Room
 	CurState      *CharState
@@ -17,6 +18,66 @@ type Player struct {
 	BaseCharStats *CharStats
 	CurCharStats  *CharStats
 	Experience    uint32
+	inventory     []*Item
+}
+
+func (p *Player) Inventory() []*Item {
+	return p.inventory
+}
+
+func (p *Player) ShowInventory() {
+	var inv strings.Builder
+	inv.WriteString("You are currently carrying:")
+	if len(p.Inventory()) > 0 {
+		for _, item := range p.Inventory() {
+			inv.WriteString("\r\n  " + CItem(item.FullName()))
+		}
+	} else {
+		inv.WriteString("\r\n  Nothing!")
+	}
+	p.SendMessage(inv.String(), true)
+}
+
+func (p *Player) AddItem(item *Item) {
+	p.inventory = append(p.inventory, item)
+	item.SetLocation(nil)
+	item.SetOwner(p)
+}
+
+func (p *Player) RemoveItem(item *Item) {
+	item.SetOwner(nil)
+	item.SetLocation(nil)
+
+	var items []*Item
+	for _, i := range p.inventory {
+		if i != item {
+			items = append(items, i)
+		}
+	}
+	p.inventory = items
+}
+
+func (p *Player) MoveItemTo(item *Item) {
+	if item.Location() != nil {
+		item.Location().RemoveItem(item)
+		item.SetLocation(nil)
+	}
+
+	if item.Owner() != nil {
+		item.Owner().RemoveItem(item)
+		item.SetOwner(nil)
+	}
+
+	p.inventory = append(p.inventory, item)
+	item.SetOwner(p)
+}
+
+func (p *Player) Name() string {
+	return p.name
+}
+
+func (p *Player) SetName(newName string) {
+	p.name = newName
 }
 
 func (p *Player) Init() {
@@ -169,7 +230,7 @@ func (p *Player) attackTarget(target *Player) {
 		p.SendMessage("You must be alive to do that!", true)
 		return
 	} else if !target.curState().alive() {
-		p.SendMessage(fmt.Sprintf("%s is already dead!", target.Name), true)
+		p.SendMessage(fmt.Sprintf("%s is already dead!", target.Name()), true)
 		return
 	}
 
@@ -183,16 +244,16 @@ func (p *Player) attackTarget(target *Player) {
 	if chance > 0 {
 		outDamage := CDamageOut(fmt.Sprintf("%d", damage))
 		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %s damage.",
-			target.Name, outDamage), true)
+			target.Name(), outDamage), true)
 
 		inDamage := CDamageIn(fmt.Sprintf("%d", damage))
 		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %s damage.",
-			p.Name, inDamage), true)
+			p.Name(), inDamage), true)
 
-		p.Room.ShowOthers(p, target, fmt.Sprintf("%s attacks %s with their bare hands!\r\n", p.Name, target.Name))
+		p.Room.ShowOthers(p, target, fmt.Sprintf("%s attacks %s with their bare hands!\r\n", p.Name(), target.Name()))
 		target.damagePlayer(uint16(damage))
 	} else {
-		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name), true)
+		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name()), true)
 	}
 }
 
@@ -200,7 +261,7 @@ func (p *Player) damagePlayer(dmg uint16) {
 	if (p.curState().hits() == 0) && (dmg > 0) {
 		p.curState().setAlive(false)
 		p.SendMessage("You were just killed!", true)
-		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s was just killed!", p.Name))
+		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s was just killed!", p.Name()))
 		return
 	}
 
@@ -216,9 +277,9 @@ func (p *Player) recallCorpse(w *World) {
 	target := w.GetRoomById("A")
 	if target != nil {
 		p.SendMessage("You recall your corpse!", true)
-		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s recalls their corpse!", p.Name))
+		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s recalls their corpse!", p.Name()))
 		w.MoveCharacter(p, target)
-		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s appears in a puff of smoke.", p.Name))
+		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s appears in a puff of smoke.", p.Name()))
 		return
 	}
 }

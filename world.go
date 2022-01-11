@@ -78,17 +78,17 @@ func (w *World) HandleCharacterJoined(character *Player) {
 
 	character.SendMessage("Welcome to Darkness Falls\n\r", true)
 	character.Room.ShowRoom(character)
-	character.Room.ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name))
+	character.Room.ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name()))
 
-	log.Println(fmt.Sprintf("Player login: %s", character.Name))
+	log.Println(fmt.Sprintf("Player login: %s", character.Name()))
 }
 
 func (w *World) RemoveFromWorld(character *Player) {
 	room := character.Room
 	room.RemoveCharacter(character)
-	room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name))
+	room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name()))
 
-	log.Println(fmt.Sprintf("Player logout: %s", character.Name))
+	log.Println(fmt.Sprintf("Player logout: %s", character.Name()))
 }
 
 func (w *World) Broadcast(msg string) {
@@ -120,15 +120,15 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "say":
 		msg := strings.Trim(input, "say ")
 		player.SendMessage(fmt.Sprintf("You said, '%s'", msg), true)
-		room.ShowOthers(player, nil, fmt.Sprintf("%s said, '%s'", player.Name, msg))
+		room.ShowOthers(player, nil, fmt.Sprintf("%s said, '%s'", player.Name(), msg))
 
 	case "look":
 		room.ShowRoom(player)
 
 	case "rename":
 		newName := tokens[len(tokens)-1]
-		player.Name = newName
-		player.SendMessage(fmt.Sprintf("Your name has been changed to %s.", player.Name), true)
+		player.SetName(newName)
+		player.SendMessage(fmt.Sprintf("Your name has been changed to %s.", player.Name()), true)
 
 	case "restat":
 		player.Init()
@@ -193,7 +193,7 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "info":
 		var output strings.Builder
 
-		name := fmt.Sprintf("Name:     %s", player.Name)
+		name := fmt.Sprintf("Name:     %s", player.Name())
 		name = fmt.Sprintf("%-25v", name)
 		output.WriteString(name)
 
@@ -223,6 +223,102 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "quit":
 		player.SendMessage("Not working yet, Ctrl+] to quit from telnet prompt.", true)
 
+	case "inv":
+		player.ShowInventory()
+
+	case "inventory":
+		player.ShowInventory()
+
+	case "create":
+		if len(tokens) < 2 {
+			player.SendMessage("Create what?  Syntax: CREATE <ARTICLE OR .> <ITEM NAME> <KEYWORD>", true)
+			return
+		}
+		itemArticle := tokens[1]
+		itemName := strings.Join(tokens[2:len(tokens)-1], " ")
+		itemKeyword := tokens[len(tokens)-1]
+
+		if strings.Compare(itemArticle, ".") == 0 {
+			itemArticle = ""
+		}
+
+		newItem := Item{
+			keyword:  itemKeyword,
+			article:  itemArticle,
+			name:     itemName,
+			owner:    nil,
+			location: nil,
+		}
+
+		player.Room.AddItem(&newItem)
+		player.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+
+	case "get":
+		if len(tokens) < 2 {
+			player.SendMessage("Get what?  Syntax: GET <ITEM>", true)
+			return
+		}
+
+		targetItem := tokens[1]
+		for _, item := range player.Room.Items {
+			if strings.HasPrefix(item.Keyword(), targetItem) {
+				player.MoveItemTo(item)
+				player.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
+				player.Room.ShowOthers(player, nil, fmt.Sprintf("%s picks up %s.", player.Name(), item.FullName()))
+				return
+			}
+		}
+
+		player.SendMessage(fmt.Sprintf("You don't see a '%s' here.", targetItem), true)
+
+	case "drop":
+		if len(tokens) < 2 {
+			player.SendMessage("Drop what?  Syntax: DROP <ITEM>", true)
+			return
+		}
+
+		targetItem := tokens[1]
+		for _, item := range player.Inventory() {
+			if strings.HasPrefix(item.Keyword(), targetItem) {
+				player.Room.MoveItemTo(item)
+				player.SendMessage(fmt.Sprintf("You drop %s.", item.FullName()), true)
+				player.Room.ShowOthers(player, nil, fmt.Sprintf("%s drops %s.", player.Name(), item.FullName()))
+				return
+			}
+		}
+
+		player.SendMessage(fmt.Sprintf("You aren't carrying a '%s'.", targetItem), true)
+
+	case "give":
+		if len(tokens) < 3 {
+			player.SendMessage("Give what to whom?  Syntax: GIVE <ITEM> <TARGET>", true)
+			return
+		}
+
+		itemName := tokens[1]
+		targetName := tokens[2]
+
+		targetMob := player.Room.FetchInhabitant(targetName)
+		if targetMob == nil {
+			player.SendMessage("You don't see them here.", true)
+			return
+		}
+
+		for _, item := range player.Inventory() {
+			if strings.HasPrefix(item.Keyword(), itemName) {
+				targetMob.MoveItemTo(item)
+				player.SendMessage(fmt.Sprintf("You give %s to %s.",
+					item.FullName(), targetMob.Name()), true)
+				targetMob.SendMessage(fmt.Sprintf("%s gives you %s.",
+					player.Name(), item.FullName()), true)
+				player.Room.ShowOthers(player, targetMob, fmt.Sprintf("%s gives %s %s.",
+					player.Name(), targetMob.Name(), item.FullName()))
+				return
+			}
+		}
+
+		player.SendMessage(fmt.Sprintf("You aren't carrying a '%s'.", itemName), true)
+
 	case "go":
 		if len(tokens) < 2 {
 			player.SendMessage("Go where?  Syntax: GO <EXIT>", true)
@@ -236,9 +332,9 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 				target := w.GetRoomById(portal.RoomId)
 				if target != nil {
 					player.SendMessage(fmt.Sprintf("You travel into a %s.", portal.Verb), true)
-					room.ShowOthers(player, nil, fmt.Sprintf("%s went into a %s.", player.Name, portal.Verb))
+					room.ShowOthers(player, nil, fmt.Sprintf("%s went into a %s.", player.Name(), portal.Verb))
 					w.MoveCharacter(player, target)
-					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name))
+					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name()))
 					return
 				}
 			}
@@ -249,9 +345,9 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 				target := w.GetRoomById(link.RoomId)
 				if target != nil {
 					player.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
-					room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
+					room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name(), link.Verb))
 					w.MoveCharacter(player, target)
-					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name))
+					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name()))
 					return
 				}
 			}
@@ -270,9 +366,9 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 				target := w.GetRoomById(link.RoomId)
 				if target != nil {
 					player.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
-					room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name, link.Verb))
+					room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name(), link.Verb))
 					w.MoveCharacter(player, target)
-					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name))
+					player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name()))
 					return
 				}
 			}

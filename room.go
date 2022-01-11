@@ -10,12 +10,46 @@ type RoomLink struct {
 }
 
 type Room struct {
-	Id      string
-	Desc    string
-	Links   []*RoomLink
-	Portals []*RoomLink
-
+	Id         string
+	Desc       string
+	Links      []*RoomLink
+	Portals    []*RoomLink
+	Items      []*Item
 	Characters []*Player
+}
+
+func (r *Room) AddItem(item *Item) {
+	r.Items = append(r.Items, item)
+	item.SetOwner(nil)
+	item.SetLocation(r)
+}
+
+func (r *Room) RemoveItem(item *Item) {
+	item.SetOwner(nil)
+	item.SetLocation(nil)
+
+	var items []*Item
+	for _, i := range r.Items {
+		if i != item {
+			items = append(items, i)
+		}
+	}
+	r.Items = items
+}
+
+func (r *Room) MoveItemTo(item *Item) {
+	if item.Owner() != nil {
+		item.Owner().RemoveItem(item)
+		item.SetOwner(nil)
+	}
+
+	if item.Location() != nil {
+		item.Location().RemoveItem(item)
+		item.SetLocation(nil)
+	}
+
+	r.Items = append(r.Items, item)
+	item.SetLocation(r)
 }
 
 func (r *Room) Show(source *Player, msg string) {
@@ -43,15 +77,15 @@ func (r *Room) ShowRoom(character *Player) {
 	numOthers := len(r.Characters) - 1
 	if numOthers > 0 {
 		count := 0
-		output.WriteString("\r\nAlso there is ")
+		output.WriteString("\r\n")
 		for _, other := range r.Characters {
 			if other != character {
-				output.WriteString(CFriend(other.Name))
+				output.WriteString(CFriend(other.Name()))
 				count++
 				if count < numOthers {
 					output.WriteString(", ")
 				} else {
-					output.WriteString(".\r\n")
+					output.WriteString(" is also here.\r\n")
 				}
 			}
 		}
@@ -65,6 +99,21 @@ func (r *Room) ShowRoom(character *Player) {
 			output.WriteString("a " + CExit(portal.Verb))
 			count++
 			if count < numPortals {
+				output.WriteString(", ")
+			} else {
+				output.WriteString(".\r\n")
+			}
+		}
+	}
+
+	numItems := len(r.Items)
+	if numItems > 0 {
+		count := 0
+		output.WriteString("You also see ")
+		for _, item := range r.Items {
+			output.WriteString(CItem(item.FullName()))
+			count++
+			if count < numItems {
 				output.WriteString(", ")
 			} else {
 				output.WriteString(".\r\n")
@@ -110,7 +159,7 @@ func (r *Room) RemoveCharacter(character *Player) {
 func (r *Room) FetchInhabitant(mobName string) *Player {
 	mobName = strings.ToLower(mobName)
 	for _, c := range r.Characters {
-		if strings.HasPrefix(strings.ToLower(c.Name), mobName) {
+		if strings.HasPrefix(strings.ToLower(c.Name()), mobName) {
 			return c
 		}
 	}
