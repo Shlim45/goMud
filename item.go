@@ -2,17 +2,53 @@ package main
 
 import "fmt"
 
+//type MudItem interface {
+//	Owner() *ItemPossessor
+//	SetOwner(newOwner *ItemPossessor)
+//	Article() string
+//	SetArticle(newArt string)
+//	Keyword() string
+//	SetKeyword(newKey string)
+//}
+
 type ItemPossessor interface {
 	AddItem(item *Item)
 	RemoveItem(item *Item)
 	MoveItemTo(item *Item)
 }
 
+type ItemType uint8
+
+const (
+	TYPE_GENERIC = iota
+	TYPE_WEAPON
+	TYPE_ARMOR
+	TYPE_COINS
+)
+
 type Item struct {
-	keyword string
-	article string
-	name    string
-	owner   *ItemPossessor
+	keyword  string
+	article  string
+	name     string
+	owner    *ItemPossessor
+	value    uint64
+	itemType ItemType
+}
+
+func (item *Item) Value() uint64 {
+	return item.value
+}
+
+func (item *Item) SetValue(newValue uint64) {
+	item.value = newValue
+}
+
+func (item *Item) ItemType() ItemType {
+	return item.itemType
+}
+
+func (item *Item) SetItemType(newType ItemType) {
+	item.itemType = newType
 }
 
 func (item *Item) Owner() *ItemPossessor {

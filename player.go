@@ -17,8 +17,9 @@ type Player struct {
 	CurPhyStats   *PhyStats
 	BaseCharStats *CharStats
 	CurCharStats  *CharStats
-	Experience    uint32
+	Experience    uint64
 	inventory     []*Item
+	Coins         uint64
 }
 
 func (p *Player) Inventory() []*Item {

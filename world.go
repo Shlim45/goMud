@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -229,25 +230,49 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "inventory":
 		player.ShowInventory()
 
+	case "wealth":
+		player.SendMessage(fmt.Sprintf("You are carrying %d silver coins.", player.Coins), true)
+
 	case "create":
 		if len(tokens) < 2 {
 			player.SendMessage("Create what?  Syntax: CREATE <ARTICLE OR .> <ITEM NAME> <KEYWORD>", true)
 			return
 		}
-		itemArticle := tokens[1]
-		itemName := strings.Join(tokens[2:len(tokens)-1], " ")
-		itemKeyword := tokens[len(tokens)-1]
 
-		if strings.Compare(itemArticle, ".") == 0 {
-			itemArticle = ""
-		}
+		var newItem Item
 
-		newItem := Item{
-			keyword:  itemKeyword,
-			article:  itemArticle,
-			name:     itemName,
-			owner:    nil,
-			location: nil,
+		if n, err := strconv.Atoi(tokens[1]); err == nil {
+			if n <= 0 {
+				player.SendMessage("You must specify a number greater than 0 to create coins!", true)
+				return
+			}
+
+			newItem = Item{
+				article:  "a",
+				name:     "pile of silver coins",
+				keyword:  "coins",
+				owner:    nil,
+				value:    uint64(n),
+				itemType: TYPE_COINS,
+			}
+
+		} else {
+			itemArticle := tokens[1]
+			itemName := strings.Join(tokens[2:len(tokens)-1], " ")
+			itemKeyword := tokens[len(tokens)-1]
+
+			if strings.Compare(itemArticle, ".") == 0 {
+				itemArticle = ""
+			}
+
+			newItem = Item{
+				keyword:  itemKeyword,
+				article:  itemArticle,
+				name:     itemName,
+				owner:    nil,
+				value:    0,
+				itemType: TYPE_GENERIC,
+			}
 		}
 
 		player.Room.AddItem(&newItem)
@@ -262,8 +287,15 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 		targetItem := tokens[1]
 		for _, item := range player.Room.Items {
 			if strings.HasPrefix(item.Keyword(), targetItem) {
-				player.MoveItemTo(item)
-				player.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
+				if item.ItemType() == ItemType(TYPE_COINS) {
+					numCoins := item.Value()
+					player.Room.RemoveItem(item)
+					player.Coins += numCoins
+					player.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
+				} else {
+					player.MoveItemTo(item)
+					player.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
+				}
 				player.Room.ShowOthers(player, nil, fmt.Sprintf("%s picks up %s.", player.Name(), item.FullName()))
 				return
 			}
@@ -274,6 +306,32 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "drop":
 		if len(tokens) < 2 {
 			player.SendMessage("Drop what?  Syntax: DROP <ITEM>", true)
+			return
+		}
+
+		if n, err := strconv.Atoi(tokens[1]); err == nil {
+			if n <= 0 {
+				player.SendMessage("You must specify a number greater than 0 to drop coins!", true)
+				return
+			}
+
+			if player.Coins < uint64(n) {
+				player.SendMessage("You aren't carrying enough silver!", true)
+				return
+			}
+
+			coinsItem := Item{
+				article: "a",
+				name:    "pile of silver coins",
+				keyword: "coins",
+				owner:   nil,
+				value:   uint64(n),
+			}
+
+			player.Coins -= uint64(n)
+			player.Room.MoveItemTo(&coinsItem)
+			player.SendMessage(fmt.Sprintf("You drop %d silver coins.", n), true)
+			player.Room.ShowOthers(player, nil, fmt.Sprintf("%s drops %s.", player.Name(), coinsItem.FullName()))
 			return
 		}
 
@@ -301,6 +359,30 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 		targetMob := player.Room.FetchInhabitant(targetName)
 		if targetMob == nil {
 			player.SendMessage("You don't see them here.", true)
+			return
+		}
+
+		if n, err := strconv.Atoi(tokens[1]); err == nil {
+			numCoins := uint64(n)
+
+			if numCoins <= 0 {
+				player.SendMessage("You must specify a number greater than 0 to give coins!", true)
+				return
+			}
+			if player.Coins < numCoins {
+				player.SendMessage("You aren't carrying enough silver!", true)
+				return
+			}
+
+			player.Coins -= numCoins
+			targetMob.Coins += numCoins
+
+			player.SendMessage(fmt.Sprintf("You give %d silver coins to %s.",
+				numCoins, targetMob.Name()), true)
+			targetMob.SendMessage(fmt.Sprintf("%s gives you %d silver coins.",
+				player.Name(), numCoins), true)
+			player.Room.ShowOthers(player, targetMob, fmt.Sprintf("%s gives %s some silver coins.",
+				player.Name(), targetMob.Name()))
 			return
 		}
 
