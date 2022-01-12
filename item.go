@@ -2,40 +2,25 @@ package main
 
 import "fmt"
 
-//
-//type Item interface {
-//	Owner() *ItemPossessor
-//	SetOwner(newOwner *ItemPossessor)
-//}
-//
-//type ItemPossessor interface {
-//	AddItem(item *MudItem)
-//	RemoveItem(item *MudItem)
-//	MoveItemTo(item *MudItem)
-//}
-
-type Item struct {
-	keyword  string
-	article  string
-	name     string
-	owner    *Player
-	location *Room
+type ItemPossessor interface {
+	AddItem(item *Item)
+	RemoveItem(item *Item)
+	MoveItemTo(item *Item)
 }
 
-func (item *Item) Owner() *Player {
+type Item struct {
+	keyword string
+	article string
+	name    string
+	owner   *ItemPossessor
+}
+
+func (item *Item) Owner() *ItemPossessor {
 	return item.owner
 }
 
-func (item *Item) SetOwner(newOwner *Player) {
-	item.owner = newOwner
-}
-
-func (item *Item) Location() *Room {
-	return item.location
-}
-
-func (item *Item) SetLocation(newLocation *Room) {
-	item.location = newLocation
+func (item *Item) SetOwner(newOwner ItemPossessor) {
+	item.owner = &newOwner
 }
 
 func (item *Item) FullName() string {

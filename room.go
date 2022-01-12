@@ -20,13 +20,11 @@ type Room struct {
 
 func (r *Room) AddItem(item *Item) {
 	r.Items = append(r.Items, item)
-	item.SetOwner(nil)
-	item.SetLocation(r)
+	item.SetOwner(r)
 }
 
 func (r *Room) RemoveItem(item *Item) {
 	item.SetOwner(nil)
-	item.SetLocation(nil)
 
 	var items []*Item
 	for _, i := range r.Items {
@@ -39,17 +37,12 @@ func (r *Room) RemoveItem(item *Item) {
 
 func (r *Room) MoveItemTo(item *Item) {
 	if item.Owner() != nil {
-		item.Owner().RemoveItem(item)
+		(*item.Owner()).RemoveItem(item)
 		item.SetOwner(nil)
 	}
 
-	if item.Location() != nil {
-		item.Location().RemoveItem(item)
-		item.SetLocation(nil)
-	}
-
 	r.Items = append(r.Items, item)
-	item.SetLocation(r)
+	item.SetOwner(r)
 }
 
 func (r *Room) Show(source *Player, msg string) {
@@ -67,7 +60,6 @@ func (r *Room) ShowOthers(source *Player, target *Player, msg string) {
 }
 
 func (r *Room) ShowRoom(character *Player) {
-	//character.SendMessage(character.Room.Desc)
 	var output strings.Builder
 
 	output.WriteString("[" + CArea("Darkness Falls") + "]\r\n") // area name

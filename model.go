@@ -14,10 +14,10 @@ type User struct {
 	ANSI      bool
 }
 
-//type Environmental interface {
-//	Name() string
-//	SetName(newName string)
-//}
+type Environmental interface {
+	Name() string
+	SetName(newName string)
+}
 
 type Mob interface {
 	basePhyStats() *PhyStats

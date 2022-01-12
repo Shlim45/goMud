@@ -40,13 +40,11 @@ func (p *Player) ShowInventory() {
 
 func (p *Player) AddItem(item *Item) {
 	p.inventory = append(p.inventory, item)
-	item.SetLocation(nil)
 	item.SetOwner(p)
 }
 
 func (p *Player) RemoveItem(item *Item) {
 	item.SetOwner(nil)
-	item.SetLocation(nil)
 
 	var items []*Item
 	for _, i := range p.inventory {
@@ -58,13 +56,8 @@ func (p *Player) RemoveItem(item *Item) {
 }
 
 func (p *Player) MoveItemTo(item *Item) {
-	if item.Location() != nil {
-		item.Location().RemoveItem(item)
-		item.SetLocation(nil)
-	}
-
 	if item.Owner() != nil {
-		item.Owner().RemoveItem(item)
+		(*item.Owner()).RemoveItem(item)
 		item.SetOwner(nil)
 	}
 
