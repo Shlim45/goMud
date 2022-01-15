@@ -141,7 +141,7 @@ func (w *World) HandlePlayerInput(player *MOB, input string) {
 			tickType: TICK_STOP,
 		}
 		monster.Init()
-		monster.setLevel(5)
+		monster.basePhyStats().setLevel(5)
 		player.Room.AddMOB(monster)
 
 	case "stats":
