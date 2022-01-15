@@ -10,7 +10,7 @@ func (e *Entity) EntityId() string {
 
 type User struct {
 	Session   *Session
-	Character *Player
+	Character *MOB
 	ANSI      bool
 }
 

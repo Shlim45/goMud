@@ -73,13 +73,15 @@ func (h *SessionHandler) Start() {
 		case *SessionCreatedEvent:
 			// create user
 
-			character := &Player{
-				name: generateName(),
+			character := &MOB{
+				name:     generateName(),
+				tickType: TICK_STOP,
 			}
-			character.Init()
 
 			user := &User{session, character, true}
 			character.User = user
+
+			character.Init()
 
 			h.users[sid] = user
 			h.world.HandleCharacterJoined(character)

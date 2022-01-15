@@ -8,7 +8,7 @@ import (
 )
 
 type World struct {
-	characters []*Player
+	characters []*MOB
 	rooms      []*Room
 }
 
@@ -74,8 +74,8 @@ func (w *World) Init() {
 	}
 }
 
-func (w *World) HandleCharacterJoined(character *Player) {
-	w.rooms[0].AddCharacter(character)
+func (w *World) HandleCharacterJoined(character *MOB) {
+	w.rooms[0].AddMOB(character)
 
 	character.SendMessage("Welcome to Darkness Falls\n\r", true)
 	character.Room.ShowRoom(character)
@@ -84,9 +84,9 @@ func (w *World) HandleCharacterJoined(character *Player) {
 	log.Println(fmt.Sprintf("Player login: %s", character.Name()))
 }
 
-func (w *World) RemoveFromWorld(character *Player) {
+func (w *World) RemoveFromWorld(character *MOB) {
 	room := character.Room
-	room.RemoveCharacter(character)
+	room.RemoveMOB(character)
 	room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name()))
 
 	log.Println(fmt.Sprintf("Player logout: %s", character.Name()))
@@ -107,13 +107,13 @@ func (w *World) GetRoomById(id string) *Room {
 	return nil
 }
 
-func (w *World) MoveCharacter(character *Player, to *Room) {
-	character.Room.RemoveCharacter(character)
-	to.AddCharacter(character)
+func (w *World) MoveCharacter(character *MOB, to *Room) {
+	character.Room.RemoveMOB(character)
+	to.AddMOB(character)
 	to.ShowRoom(character)
 }
 
-func (w *World) HandlePlayerInput(player *Player, input string) {
+func (w *World) HandlePlayerInput(player *MOB, input string) {
 	room := player.Room
 	tokens := strings.Split(input, " ")
 
@@ -134,6 +134,15 @@ func (w *World) HandlePlayerInput(player *Player, input string) {
 	case "restat":
 		player.Init()
 		player.SendMessage("Your stats have been randomized and vitals have been reset to default.", true)
+
+	case "spawn":
+		monster := &MOB{
+			name:     "a small dog",
+			tickType: TICK_STOP,
+		}
+		monster.Init()
+		monster.setLevel(5)
+		player.Room.AddMOB(monster)
 
 	case "stats":
 		var output strings.Builder
