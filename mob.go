@@ -91,6 +91,16 @@ const (
 	TICK_STOP
 )
 
+func (m *MOB) AttackVictim() {
+	victim := m.Victim
+	if victim == nil {
+		return
+	}
+	if victim.Room == m.Room {
+		m.attackTarget(victim)
+	}
+}
+
 func (m *MOB) Tick(tType TickType) bool {
 	if m == nil || tType == TICK_STOP {
 		return false
@@ -104,18 +114,17 @@ func (m *MOB) Tick(tType TickType) bool {
 		if !m.curState().alive() {
 			return false
 		}
-		//log.Printf("MOB: %d %s", m.tickCount, m.Name())
 
 		if m.tickCount%4 == 0 {
 			// hit victim or random opponent
+			m.AttackVictim()
 		}
 
 	case TICK_PLAYER:
-		//log.Printf("PLAYER: %d %s", m.tickCount, m.Name())
 		if m.curState().alive() {
 			if m.tickCount%2 == 0 {
 				// heal power
-				m.adjPower(2, m.maxState().power())
+				m.adjPower(1, m.maxState().power())
 			} else if m.tickCount%7 == 0 {
 				// heal hits and fat
 				m.adjHits(6, m.maxState().hits())
@@ -127,7 +136,7 @@ func (m *MOB) Tick(tType TickType) bool {
 		return false
 	}
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(1000 * time.Millisecond)
 	return m.Tick(m.tickType)
 }
 
@@ -229,15 +238,6 @@ func (m *MOB) recoverCharStats() {
 	m.CurCharStats = m.BaseCharStats.copyOf()
 }
 
-func (m *MOB) level() uint8 {
-	return m.curPhyStats().level()
-}
-
-func (m *MOB) setLevel(newLevel uint8) {
-	m.basePhyStats().setLevel(newLevel)
-	m.recoverPhyStats()
-}
-
 func (m *MOB) adjHits(amount int16, max uint16) {
 	newHits := int32(m.curState().hits()) + int32(amount)
 	if newHits < 0 {
@@ -299,6 +299,7 @@ func (m *MOB) attackTarget(target *MOB) {
 	if target == nil {
 		m.SendMessage("You must specify a target.", true)
 	}
+
 	if !m.curState().alive() {
 		m.SendMessage("You must be alive to do that!", true)
 		return
@@ -314,16 +315,15 @@ func (m *MOB) attackTarget(target *MOB) {
 		damage = 0
 	}
 
+	m.Room.ShowOthers(m, target, fmt.Sprintf("\r\n%s attacks %s with their bare hands!", m.Name(), target.Name()))
+
 	if chance > 0 {
-		outDamage := CDamageOut(fmt.Sprintf("%d", damage))
 		m.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %s damage.",
-			target.Name(), outDamage), true)
+			target.Name(), CDamageOut(damage)), true)
 
-		inDamage := CDamageIn(fmt.Sprintf("%d", damage))
 		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %s damage.",
-			m.Name(), inDamage), true)
+			m.Name(), CDamageIn(damage)), true)
 
-		m.Room.ShowOthers(m, target, fmt.Sprintf("%s attacks %s with their bare hands!\r\n", m.Name(), target.Name()))
 		target.damageMOB(m, uint16(damage))
 	} else {
 		m.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name()), true)
@@ -358,6 +358,8 @@ func (m *MOB) AwardRP(howMuch uint32) {
 
 func (m *MOB) killMOB(killer *MOB) {
 	m.curState().setAlive(false)
+	m.Victim = nil
+	killer.Victim = nil
 	if m.isPlayer() {
 		m.SendMessage(fmt.Sprintf("You were just killed by %s!", killer.Name()), true)
 		killer.SendMessage(fmt.Sprintf("You just killed %s!", m.Name()), true)
@@ -382,15 +384,24 @@ func (m *MOB) killMOB(killer *MOB) {
 }
 
 func (m *MOB) damageMOB(attacker *MOB, dmg uint16) {
-	if (m.curState().hits() == 0) && (dmg > 0) {
-		m.killMOB(attacker)
-		return
+	if m.isPlayer() {
+		if (m.curState().hits() == 0) && (dmg > 0) {
+			m.killMOB(attacker)
+			return
+		}
+		m.adjHits(int16(-dmg), m.maxState().hits())
+		if m.curState().hits() == 0 {
+			m.SendMessage("You are almost dead!", true)
+		}
+	} else {
+		m.adjHits(int16(-dmg), m.maxState().hits())
+		if m.curState().hits() <= 0 {
+			m.killMOB(attacker)
+		}
 	}
 
-	m.adjHits(int16(-dmg), m.maxState().hits())
-	if m.curState().hits() == 0 {
-		m.SendMessage("You are almost dead!", true)
-	}
+	attacker.Victim = m
+	m.Victim = attacker
 }
 
 func (m *MOB) recallCorpse(w *World) {

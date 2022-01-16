@@ -14,6 +14,50 @@ type User struct {
 	ANSI      bool
 }
 
+type Realm uint8
+
+const (
+	IMMORTAL = iota
+	EVIL
+	CHAOS
+	GOOD
+	KAID
+)
+
+func (R Realm) String() string {
+	switch R {
+	case IMMORTAL:
+		return "Immortal"
+	case EVIL:
+		return "Evil"
+	case CHAOS:
+		return "Chaos"
+	case GOOD:
+		return "Good"
+	case KAID:
+		return "Kaid"
+	default:
+		return "None"
+	}
+}
+
+func (R Realm) God() string {
+	switch R {
+	case IMMORTAL:
+		return "Xyz"
+	case EVIL:
+		return "Arnak"
+	case CHAOS:
+		return "Ra'Kur"
+	case GOOD:
+		return "Niord"
+	case KAID:
+		return "Abc"
+	default:
+		return "None"
+	}
+}
+
 type Environmental interface {
 	Name() string
 	SetName(newName string)

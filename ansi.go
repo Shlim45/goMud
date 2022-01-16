@@ -13,6 +13,7 @@ var (
 	CArea      = Red
 	CSigil     = Cyan
 	CNormal    = White
+	CHighlight = BrightYellow
 )
 
 var (
