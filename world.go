@@ -143,6 +143,7 @@ func (w *World) HandlePlayerInput(player *MOB, input string) {
 		monster.Init()
 		monster.setLevel(5)
 		player.Room.AddMOB(monster)
+		player.Room.Show(player, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
 
 	case "stats":
 		var output strings.Builder

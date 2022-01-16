@@ -18,6 +18,7 @@ type MOB struct {
 	BaseCharStats *CharStats
 	CurCharStats  *CharStats
 	Experience    uint64
+	RealmPoints   uint32
 	inventory     []*Item
 	Coins         uint64
 	tickType      TickType
@@ -146,12 +147,12 @@ func (m *MOB) Init() {
 	m.CurCharStats = baseCStats.copyOf()
 
 	baseStats := PhyStats{
-		Attack:       uint16(5 * (m.BaseCharStats.dexterity() / 10.0)),
-		Damage:       uint16(5 * (m.BaseCharStats.strength() / 10.0)),
-		Evasion:      uint16(5 * (m.BaseCharStats.agility() / 10.0)),
-		Defense:      uint16(5 * (m.BaseCharStats.constitution() / 10.0)),
-		MagicAttack:  uint16(5 * (m.BaseCharStats.wisdom() / 10.0)),
-		MagicDamage:  uint16(5 * (m.BaseCharStats.intelligence() / 10.0)),
+		Attack:       uint16(3 * (m.BaseCharStats.dexterity() / 4.0)),
+		Damage:       uint16(3 * (m.BaseCharStats.strength() / 4.0)),
+		Evasion:      uint16(m.BaseCharStats.agility() / 2.0),
+		Defense:      uint16(m.BaseCharStats.constitution() / 2.0),
+		MagicAttack:  uint16(m.BaseCharStats.wisdom()),
+		MagicDamage:  uint16(m.BaseCharStats.intelligence()),
 		MagicEvasion: uint16(3 * (m.BaseCharStats.wisdom() / 4.0)),
 		MagicDefense: uint16(3 * (m.BaseCharStats.intelligence() / 4.0)),
 		Level:        1 + uint8(m.Experience/1000),
@@ -326,6 +327,32 @@ func (m *MOB) attackTarget(target *MOB) {
 		target.damageMOB(m, uint16(damage))
 	} else {
 		m.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name()), true)
+		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  They miss!", m.Name()), true)
+	}
+}
+
+func (m *MOB) AwardExp(howMuch uint64) {
+	old := m.Experience
+	tnl := 1000 - (old % 1000)
+	m.Experience += howMuch
+	if howMuch >= tnl {
+		newLevel := m.curPhyStats().level() + 1
+		if newLevel > 75 {
+			return
+		}
+		m.basePhyStats().setLevel(newLevel)
+		m.SendMessage(fmt.Sprintf("You raise a level!\r\n  Your new level is %s.",
+			CHighlight(newLevel)), true)
+	}
+}
+
+func (m *MOB) AwardRP(howMuch uint32) {
+	old := m.RealmPoints
+	tnr := 100 - (old % 100)
+	m.RealmPoints += howMuch
+	if howMuch >= tnr {
+		m.SendMessage(fmt.Sprintf("You gain a rank in your realm!  Your new title is %s.",
+			CHighlight("Dark Acolyte")), true)
 	}
 }
 
@@ -337,12 +364,19 @@ func (m *MOB) killMOB(killer *MOB) {
 		m.Room.ShowOthers(m, killer, fmt.Sprintf("%s was just killed by %s!", m.Name(), killer.Name()))
 		// drop held items
 		// handle RP
+		rpAward := uint32(m.curPhyStats().level() - (killer.curPhyStats().level() - m.curPhyStats().level()))
+		plural := "point"
+		if rpAward != 1 {
+			plural = "points"
+		}
+		killer.SendMessage(fmt.Sprintf("You gain %s realm %s!", CHighlight(rpAward), plural), false)
+		killer.AwardRP(rpAward)
 		// create a corpse?  flag
 	} else {
-		expAward := uint64(m.level() * 100)
-		killer.Experience += expAward
+		expAward := uint64(m.curPhyStats().level() * 100)
 		killer.Room.Show(killer, fmt.Sprintf("%s dies!", m.Name()))
-		killer.SendMessage(fmt.Sprintf("You gain %d experience!", expAward), false)
+		killer.SendMessage(fmt.Sprintf("You gain %s experience!", CHighlight(expAward)), false)
+		killer.AwardExp(expAward)
 		m.Room.RemoveMOB(m)
 	}
 }
