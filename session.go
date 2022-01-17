@@ -38,11 +38,13 @@ type SessionHandler struct {
 	world        *World
 	eventChannel <-chan SessionEvent
 	users        map[string]*User
+	library      *MudLib
 }
 
-func NewSessionHandler(world *World, eventChannel <-chan SessionEvent) *SessionHandler {
+func NewSessionHandler(world *World, library *MudLib, eventChannel <-chan SessionEvent) *SessionHandler {
 	return &SessionHandler{
 		world:        world,
+		library:      library,
 		eventChannel: eventChannel,
 		users:        map[string]*User{},
 	}
@@ -95,7 +97,7 @@ func (h *SessionHandler) Start() {
 		case *SessionInputEvent:
 
 			user := h.users[sid]
-			h.world.HandlePlayerInput(user.Character, event.input)
+			h.world.HandlePlayerInput(user.Character, event.input, h.library)
 		}
 	}
 }

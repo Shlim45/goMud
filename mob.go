@@ -137,7 +137,8 @@ func (m *MOB) Tick(tType TickType) bool {
 	}
 
 	time.Sleep(1000 * time.Millisecond)
-	return m.Tick(m.tickType)
+	go m.Tick(m.tickType)
+	return m.tickType != TICK_STOP
 }
 
 func (m *MOB) Init() {
@@ -404,13 +405,13 @@ func (m *MOB) damageMOB(attacker *MOB, dmg uint16) {
 	m.Victim = attacker
 }
 
-func (m *MOB) recallCorpse(w *World) {
+func (m *MOB) releaseCorpse(w *World) {
 	m.recoverCharState()
 	m.recoverPhyStats()
 	target := w.GetRoomById("A")
 	if target != nil {
-		m.SendMessage("You recall your corpse!", true)
-		m.Room.ShowOthers(m, nil, fmt.Sprintf("%s recalls their corpse!", m.Name()))
+		m.SendMessage("You release your corpse!", true)
+		m.Room.ShowOthers(m, nil, fmt.Sprintf("%s releases their corpse!", m.Name()))
 		w.MoveCharacter(m, target)
 		m.Room.ShowOthers(m, nil, fmt.Sprintf("%s appears in a puff of smoke.", m.Name()))
 		return

@@ -94,7 +94,7 @@ func (r *Room) ShowRoom(player *MOB) {
 		count := 0
 		output.WriteString("You also see ")
 		for _, portal := range r.Portals {
-			output.WriteString("a " + CExit(portal.Verb))
+			output.WriteString(CExit("a " + portal.Verb))
 			count++
 			if count < numPortals {
 				output.WriteString(", ")

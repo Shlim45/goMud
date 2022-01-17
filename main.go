@@ -10,7 +10,10 @@ func main() {
 	world := NewWorld()
 	world.Init()
 
-	sessionHandler := NewSessionHandler(world, ch)
+	library := NewLibrary(world)
+	library.LoadCommands()
+
+	sessionHandler := NewSessionHandler(world, library, ch)
 	go sessionHandler.Start()
 
 	err := startServer(ch)

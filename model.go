@@ -14,6 +14,24 @@ type User struct {
 	ANSI      bool
 }
 
+type TimerType uint8
+
+const (
+	TIMER_NONE = iota
+	TIMER_ATTACK
+	TIMER_SPELL
+	TIMER_SKILL
+)
+
+type ActionCost uint8
+
+const (
+	COST_NONE = iota
+	COST_HITS
+	COST_FAT
+	COST_POWER
+)
+
 type Realm uint8
 
 const (
