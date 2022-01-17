@@ -35,24 +35,24 @@ const (
 type Realm uint8
 
 const (
-	IMMORTAL = iota
-	EVIL
-	CHAOS
-	GOOD
-	KAID
+	REALM_IMMORTAL = iota
+	REALM_EVIL
+	REALM_CHAOS
+	REALM_GOOD
+	REALM_KAID
 )
 
 func (R Realm) String() string {
 	switch R {
-	case IMMORTAL:
+	case REALM_IMMORTAL:
 		return "Immortal"
-	case EVIL:
+	case REALM_EVIL:
 		return "Evil"
-	case CHAOS:
+	case REALM_CHAOS:
 		return "Chaos"
-	case GOOD:
+	case REALM_GOOD:
 		return "Good"
-	case KAID:
+	case REALM_KAID:
 		return "Kaid"
 	default:
 		return "None"
@@ -61,15 +61,15 @@ func (R Realm) String() string {
 
 func (R Realm) God() string {
 	switch R {
-	case IMMORTAL:
+	case REALM_IMMORTAL:
 		return "Xyz"
-	case EVIL:
+	case REALM_EVIL:
 		return "Arnak"
-	case CHAOS:
+	case REALM_CHAOS:
 		return "Ra'Kur"
-	case GOOD:
+	case REALM_GOOD:
 		return "Niord"
-	case KAID:
+	case REALM_KAID:
 		return "Abc"
 	default:
 		return "None"

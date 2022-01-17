@@ -51,7 +51,7 @@ func (c *Command) CheckTimer() bool {
 	return c.checkTimer
 }
 
-func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
+func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) bool {
 	success := false
 	room := m.Room
 
@@ -76,10 +76,15 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 		newName := input[len(input)-1]
 		m.SetName(newName)
 		m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
+		if strings.Compare(newName, "Karsus") == 0 {
+
+		} else if strings.Compare(newName, "Czerk") == 0 {
+
+		}
 		success = true
 
 	case "reroll":
-		m.Init()
+		m.Init(library)
 		m.SendMessage("Your stats have been randomized and vitals have been reset to default.", true)
 		success = true
 
@@ -88,7 +93,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 			name:     "a small dog",
 			tickType: TICK_STOP,
 		}
-		monster.Init()
+		monster.Init(library)
 		monster.basePhyStats().setLevel(5)
 		m.Room.AddMOB(monster)
 		m.Room.Show(m, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
@@ -173,7 +178,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 		name = fmt.Sprintf("%-25v", name)
 		output.WriteString(name)
 
-		pClass := fmt.Sprintf("Class:    %s\r\n", "Generic Class")
+		pClass := fmt.Sprintf("Class:    %s\r\n", m.curCharStats().CurrentClass().Name())
 		output.WriteString(pClass)
 
 		level := fmt.Sprintf("Level:    %d", m.curPhyStats().level())
@@ -186,7 +191,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 		output.WriteString(Yellow("\r\n                  Score   Bonus\r\n"))
 		output.WriteString("                  -----   -----\r\n")
 
-		for stat, value := range m.curCharStats().AllStats() {
+		for stat, value := range m.curCharStats().Stats() {
 			output.WriteString(fmt.Sprintf("%-18v%2v\r\n",
 				StatToString(uint8(stat))+":", value))
 		}

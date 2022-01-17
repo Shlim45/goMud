@@ -35,68 +35,81 @@ func StatToString(S uint8) string {
 }
 
 type CharStats struct {
-	Stats [NUM_STATS]uint8
+	stats     [NUM_STATS]uint8
+	charClass CharClass
+}
+
+func (cState *CharStats) CurrentClass() CharClass {
+	return cState.charClass
 }
 
 func (cState *CharStats) copyOf() *CharStats {
 	var statsCopy [NUM_STATS]uint8
-	for stat, value := range cState.Stats {
+	for stat, value := range cState.stats {
 		statsCopy[stat] = value
 	}
 	copyOf := CharStats{
-		Stats: statsCopy,
+		stats:     statsCopy,
+		charClass: cState.CurrentClass(),
 	}
 	return &copyOf
 }
 
-func (cState *CharStats) AllStats() *[NUM_STATS]uint8 {
-	return &cState.Stats
+func (cState *CharStats) SetStat(stat uint8, value uint8) {
+	if stat < NUM_STATS {
+		cState.stats[stat] = value
+	}
 }
 
-func (cState *CharStats) strength() uint8 {
-	return cState.Stats[STAT_STRENGTH]
+func (cState *CharStats) Stats() *[NUM_STATS]uint8 {
+	return &cState.stats
 }
 
-func (cState *CharStats) setStrength(newStr uint8) {
-	cState.Stats[STAT_STRENGTH] = newStr
-}
-
-func (cState *CharStats) constitution() uint8 {
-	return cState.Stats[STAT_CONSTITUTION]
-}
-
-func (cState *CharStats) setConstitution(newCon uint8) {
-	cState.Stats[STAT_CONSTITUTION] = newCon
-}
-
-func (cState *CharStats) agility() uint8 {
-	return cState.Stats[STAT_AGILITY]
-}
-
-func (cState *CharStats) setAgility(newAgi uint8) {
-	cState.Stats[STAT_AGILITY] = newAgi
-}
-
-func (cState *CharStats) dexterity() uint8 {
-	return cState.Stats[STAT_DEXTERITY]
-}
-
-func (cState *CharStats) setDexterity(newDex uint8) {
-	cState.Stats[STAT_DEXTERITY] = newDex
-}
-
-func (cState *CharStats) intelligence() uint8 {
-	return cState.Stats[STAT_INTELLIGENCE]
-}
-
-func (cState *CharStats) setIntelligence(newInt uint8) {
-	cState.Stats[STAT_INTELLIGENCE] = newInt
-}
-
-func (cState *CharStats) wisdom() uint8 {
-	return cState.Stats[STAT_WISDOM]
-}
-
-func (cState *CharStats) setWisdom(newWis uint8) {
-	cState.Stats[STAT_WISDOM] = newWis
-}
+//
+//func (cState *CharStats) strength() uint8 {
+//	return cState.stats[STAT_STRENGTH]
+//}
+//
+//func (cState *CharStats) setStrength(newStr uint8) {
+//	cState.stats[STAT_STRENGTH] = newStr
+//}
+//
+//func (cState *CharStats) constitution() uint8 {
+//	return cState.stats[STAT_CONSTITUTION]
+//}
+//
+//func (cState *CharStats) setConstitution(newCon uint8) {
+//	cState.stats[STAT_CONSTITUTION] = newCon
+//}
+//
+//func (cState *CharStats) agility() uint8 {
+//	return cState.stats[STAT_AGILITY]
+//}
+//
+//func (cState *CharStats) setAgility(newAgi uint8) {
+//	cState.stats[STAT_AGILITY] = newAgi
+//}
+//
+//func (cState *CharStats) dexterity() uint8 {
+//	return cState.stats[STAT_DEXTERITY]
+//}
+//
+//func (cState *CharStats) setDexterity(newDex uint8) {
+//	cState.stats[STAT_DEXTERITY] = newDex
+//}
+//
+//func (cState *CharStats) intelligence() uint8 {
+//	return cState.stats[STAT_INTELLIGENCE]
+//}
+//
+//func (cState *CharStats) setIntelligence(newInt uint8) {
+//	cState.stats[STAT_INTELLIGENCE] = newInt
+//}
+//
+//func (cState *CharStats) wisdom() uint8 {
+//	return cState.stats[STAT_WISDOM]
+//}
+//
+//func (cState *CharStats) setWisdom(newWis uint8) {
+//	cState.stats[STAT_WISDOM] = newWis
+//}

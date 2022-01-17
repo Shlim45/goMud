@@ -7,22 +7,31 @@ type Library interface {
 	AddCommand(newCmd *Command)
 	RemoveCommand(toRemove *Command) bool
 	FindCommand(search string) *Command
+
+	CharClasses() map[string]CharClass
+	AddCharClass(newClass CharClass)
+	RemoveCharClass(toRemove CharClass) bool
+	FindCharClass(search string) CharClass
+
 	Combat() string
 }
 
 type MudLib struct {
-	commands map[string]*Command
-	combat   string
-	world    *World
+	commands    map[string]*Command
+	charClasses map[string]CharClass
+	combat      string
+	world       *World
 }
 
 func NewLibrary(world *World) *MudLib {
 	commands := make(map[string]*Command)
+	charClasses := make(map[string]CharClass)
 	var combat string
 	return &MudLib{
-		commands: commands,
-		combat:   combat,
-		world:    world,
+		commands:    commands,
+		charClasses: charClasses,
+		combat:      combat,
+		world:       world,
 	}
 }
 
@@ -61,6 +70,73 @@ func (l *MudLib) FindCommand(search string) *Command {
 	}
 
 	return cmd
+}
+
+func (l *MudLib) CharClasses() map[string]CharClass {
+	return l.charClasses
+}
+
+func (l *MudLib) AddCharClass(newClass CharClass) {
+	_, exists := l.charClasses[newClass.Name()]
+	if !exists {
+		l.charClasses[newClass.Name()] = newClass
+	}
+}
+
+func (l *MudLib) RemoveCharClass(toRemove CharClass) bool {
+	_, exists := l.charClasses[toRemove.Name()]
+	delete(l.charClasses, toRemove.Name())
+	return exists
+}
+
+func (l *MudLib) FindCharClass(search string) CharClass {
+	// find exact match
+	foundClass, exists := l.charClasses[search]
+	if exists {
+		return foundClass
+	}
+
+	search = strings.ToLower(search)
+	// find partial match
+	for name, charClass := range l.CharClasses() {
+		if strings.HasPrefix(strings.ToLower(name), search) {
+			return charClass
+		}
+	}
+
+	return nil
+}
+
+func (l *MudLib) LoadCharClasses() {
+	Fighter := PlayerClass{
+		name:    "Fighter",
+		realm:   REALM_IMMORTAL,
+		enabled: false,
+		statBonuses: [6]float32{
+			1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+		},
+	}
+	l.AddCharClass(&Fighter)
+
+	Skeleton := PlayerClass{
+		name:    "Skeleton",
+		realm:   REALM_EVIL,
+		enabled: true,
+		statBonuses: [6]float32{
+			1.5, 0.9, 1.5, 1.3, 0.4, 0.5,
+		},
+	}
+	l.AddCharClass(&Skeleton)
+
+	Necromancer := PlayerClass{
+		name:    "Necromancer",
+		realm:   REALM_EVIL,
+		enabled: true,
+		statBonuses: [6]float32{
+			0.4, 0.6, 1.3, 1.5, 1.5, 1.4,
+		},
+	}
+	l.AddCharClass(&Necromancer)
 }
 
 func (l *MudLib) LoadCommands() {

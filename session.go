@@ -83,7 +83,7 @@ func (h *SessionHandler) Start() {
 			user := &User{session, character, true}
 			character.User = user
 
-			character.Init()
+			character.Init(h.library)
 
 			h.users[sid] = user
 			h.world.HandleCharacterJoined(character)

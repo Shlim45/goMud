@@ -12,6 +12,7 @@ func main() {
 
 	library := NewLibrary(world)
 	library.LoadCommands()
+	library.LoadCharClasses()
 
 	sessionHandler := NewSessionHandler(world, library, ch)
 	go sessionHandler.Start()

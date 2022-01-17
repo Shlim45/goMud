@@ -141,11 +141,12 @@ func (m *MOB) Tick(tType TickType) bool {
 	return m.tickType != TICK_STOP
 }
 
-func (m *MOB) Init() {
+func (m *MOB) Init(library *MudLib) {
 	rand.Seed(time.Now().UnixMilli())
 
 	var stats [NUM_STATS]uint8
 
+	var newClass CharClass
 	if strings.Compare(m.Name(), "Karsus") == 0 {
 		stats[STAT_STRENGTH] = 19
 		stats[STAT_CONSTITUTION] = 15
@@ -153,38 +154,49 @@ func (m *MOB) Init() {
 		stats[STAT_DEXTERITY] = 19
 		stats[STAT_INTELLIGENCE] = 17
 		stats[STAT_WISDOM] = 15
+		newClass = library.FindCharClass("Skeleton")
+		m.SendMessage("You shake under the transforming power!", false)
+	} else if strings.Compare(m.Name(), "Czerk") == 0 {
+		stats[STAT_STRENGTH] = 15
+		stats[STAT_CONSTITUTION] = 18
+		stats[STAT_AGILITY] = 20
+		stats[STAT_DEXTERITY] = 18
+		stats[STAT_INTELLIGENCE] = 19
+		stats[STAT_WISDOM] = 18
+		newClass = library.FindCharClass("Necromancer")
 		m.SendMessage("You shake under the transforming power!", false)
 	} else {
 		for i := range stats {
 			stats[i] = uint8(rand.Intn(17) + 4)
 		}
+		newClass = library.FindCharClass("Fighter")
 	}
 
 	baseCStats := CharStats{
-		Stats: stats,
+		stats:     stats,
+		charClass: newClass,
 	}
-
 	m.BaseCharStats = &baseCStats
 	m.CurCharStats = baseCStats.copyOf()
 
 	baseStats := PhyStats{
-		Attack:       uint16(3 * (m.BaseCharStats.dexterity() / 4)),
-		Damage:       uint16(3 * (m.BaseCharStats.strength() / 4)),
-		Evasion:      uint16(m.BaseCharStats.agility() / 2),
-		Defense:      uint16(m.BaseCharStats.constitution() / 2),
-		MagicAttack:  uint16(m.BaseCharStats.wisdom()),
-		MagicDamage:  uint16(m.BaseCharStats.intelligence()),
-		MagicEvasion: uint16(3 * (m.BaseCharStats.wisdom() / 4)),
-		MagicDefense: uint16(3 * (m.BaseCharStats.intelligence() / 4)),
+		Attack:       uint16(3 * (m.BaseCharStats.Stats()[STAT_DEXTERITY] / 4)),
+		Damage:       uint16(3 * (m.BaseCharStats.Stats()[STAT_STRENGTH] / 4)),
+		Evasion:      uint16(m.BaseCharStats.Stats()[STAT_AGILITY] / 2),
+		Defense:      uint16(m.BaseCharStats.Stats()[STAT_CONSTITUTION] / 2),
+		MagicAttack:  uint16(m.BaseCharStats.Stats()[STAT_WISDOM]),
+		MagicDamage:  uint16(m.BaseCharStats.Stats()[STAT_INTELLIGENCE]),
+		MagicEvasion: uint16(3 * (m.BaseCharStats.Stats()[STAT_WISDOM] / 4)),
+		MagicDefense: uint16(3 * (m.BaseCharStats.Stats()[STAT_INTELLIGENCE] / 4)),
 		Level:        1 + uint8(m.Experience/1000),
 	}
 	m.BasePhyStats = &baseStats
 	m.CurPhyStats = baseStats.copyOf()
 
 	baseState := CharState{
-		Hits:     uint16(30 + (m.BaseCharStats.constitution() / 10.0)),
-		Fat:      uint16(30 + (m.BaseCharStats.constitution() / 10.0)),
-		Power:    uint16(20 + (m.BaseCharStats.intelligence() / 10.0)),
+		Hits:     uint16(30 + (m.BaseCharStats.Stats()[STAT_CONSTITUTION] / 10.0)),
+		Fat:      uint16(30 + (m.BaseCharStats.Stats()[STAT_CONSTITUTION] / 10.0)),
+		Power:    uint16(20 + (m.BaseCharStats.Stats()[STAT_INTELLIGENCE] / 10.0)),
 		Alive:    true,
 		Standing: true,
 		Sitting:  false,
