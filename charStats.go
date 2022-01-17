@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"math"
+)
 
 type Stat uint8
 
@@ -65,51 +68,14 @@ func (cState *CharStats) Stats() *[NUM_STATS]uint8 {
 	return &cState.stats
 }
 
-//
-//func (cState *CharStats) strength() uint8 {
-//	return cState.stats[STAT_STRENGTH]
-//}
-//
-//func (cState *CharStats) setStrength(newStr uint8) {
-//	cState.stats[STAT_STRENGTH] = newStr
-//}
-//
-//func (cState *CharStats) constitution() uint8 {
-//	return cState.stats[STAT_CONSTITUTION]
-//}
-//
-//func (cState *CharStats) setConstitution(newCon uint8) {
-//	cState.stats[STAT_CONSTITUTION] = newCon
-//}
-//
-//func (cState *CharStats) agility() uint8 {
-//	return cState.stats[STAT_AGILITY]
-//}
-//
-//func (cState *CharStats) setAgility(newAgi uint8) {
-//	cState.stats[STAT_AGILITY] = newAgi
-//}
-//
-//func (cState *CharStats) dexterity() uint8 {
-//	return cState.stats[STAT_DEXTERITY]
-//}
-//
-//func (cState *CharStats) setDexterity(newDex uint8) {
-//	cState.stats[STAT_DEXTERITY] = newDex
-//}
-//
-//func (cState *CharStats) intelligence() uint8 {
-//	return cState.stats[STAT_INTELLIGENCE]
-//}
-//
-//func (cState *CharStats) setIntelligence(newInt uint8) {
-//	cState.stats[STAT_INTELLIGENCE] = newInt
-//}
-//
-//func (cState *CharStats) wisdom() uint8 {
-//	return cState.stats[STAT_WISDOM]
-//}
-//
-//func (cState *CharStats) setWisdom(newWis uint8) {
-//	cState.stats[STAT_WISDOM] = newWis
-//}
+func (cState *CharStats) Stat(stat Stat) uint8 {
+	return cState.stats[stat]
+}
+
+func (cState *CharStats) StatBonus(stat uint8) uint8 {
+	if stat >= NUM_STATS {
+		return 0
+	}
+	bonus := float64(cState.Stats()[stat]) * cState.charClass.StatBonuses()[stat]
+	return uint8(math.Round(bonus))
+}

@@ -9,15 +9,15 @@ type CharClass interface {
 	//AllowedRace(r *Race) bool
 	SetRealm(realm Realm)
 	Realm() Realm
-	SetStatBonuses(statBonuses [NUM_STATS]float32)
-	StatBonuses() *[NUM_STATS]float32
+	SetStatBonuses(statBonuses [NUM_STATS]float64)
+	StatBonuses() *[NUM_STATS]float64
 }
 
 type PlayerClass struct {
 	name        string
 	realm       Realm
 	enabled     bool
-	statBonuses [NUM_STATS]float32
+	statBonuses [NUM_STATS]float64
 	//qualifyingRaces []*Race
 }
 
@@ -49,10 +49,10 @@ func (pc *PlayerClass) SetRealm(realm Realm) {
 	pc.realm = realm
 }
 
-func (pc *PlayerClass) SetStatBonuses(statBonuses [NUM_STATS]float32) {
+func (pc *PlayerClass) SetStatBonuses(statBonuses [NUM_STATS]float64) {
 	pc.statBonuses = statBonuses
 }
 
-func (pc *PlayerClass) StatBonuses() *[NUM_STATS]float32 {
+func (pc *PlayerClass) StatBonuses() *[NUM_STATS]float64 {
 	return &pc.statBonuses
 }

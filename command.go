@@ -175,25 +175,39 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		var output strings.Builder
 
 		name := fmt.Sprintf("Name:     %s", m.Name())
-		name = fmt.Sprintf("%-25v", name)
+		name = fmt.Sprintf("%-40v", name)
 		output.WriteString(name)
 
 		pClass := fmt.Sprintf("Class:    %s\r\n", m.curCharStats().CurrentClass().Name())
 		output.WriteString(pClass)
 
 		level := fmt.Sprintf("Level:    %d", m.curPhyStats().level())
-		level = fmt.Sprintf("%-25v", level)
+		level = fmt.Sprintf("%-40v", level)
 		output.WriteString(level)
 
 		exp := fmt.Sprintf("Experience:    %d\r\n", m.Experience)
 		output.WriteString(exp)
 
+		var realmTitle string
+		if m.RealmPoints > 0 {
+			realmTitle = "Dark Acolyte"
+		} else {
+			realmTitle = ""
+		}
+		realmRank := fmt.Sprintf("Realm Title:    %s", realmTitle)
+		realmRank = fmt.Sprintf("%-40v", realmRank)
+		output.WriteString(realmRank)
+
+		rp := fmt.Sprintf("Realm Points:  %d\r\n", m.RealmPoints)
+		output.WriteString(rp)
+
 		output.WriteString(Yellow("\r\n                  Score   Bonus\r\n"))
 		output.WriteString("                  -----   -----\r\n")
 
 		for stat, value := range m.curCharStats().Stats() {
-			output.WriteString(fmt.Sprintf("%-18v%2v\r\n",
-				StatToString(uint8(stat))+":", value))
+			bonus := m.curCharStats().StatBonus(uint8(stat))
+			output.WriteString(fmt.Sprintf("%-18v%2v (%2v%%)\r\n",
+				StatToString(uint8(stat))+":", value, bonus))
 		}
 
 		output.WriteString("\r\nTry STATS or HEALTH commands.")

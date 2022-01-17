@@ -112,7 +112,7 @@ func (l *MudLib) LoadCharClasses() {
 		name:    "Fighter",
 		realm:   REALM_IMMORTAL,
 		enabled: false,
-		statBonuses: [6]float32{
+		statBonuses: [6]float64{
 			1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
 		},
 	}
@@ -122,8 +122,8 @@ func (l *MudLib) LoadCharClasses() {
 		name:    "Skeleton",
 		realm:   REALM_EVIL,
 		enabled: true,
-		statBonuses: [6]float32{
-			1.5, 0.9, 1.5, 1.3, 0.4, 0.5,
+		statBonuses: [6]float64{
+			1.5, 0.6, 1.4, 1.6, 0.4, 0.5,
 		},
 	}
 	l.AddCharClass(&Skeleton)
@@ -132,8 +132,8 @@ func (l *MudLib) LoadCharClasses() {
 		name:    "Necromancer",
 		realm:   REALM_EVIL,
 		enabled: true,
-		statBonuses: [6]float32{
-			0.4, 0.6, 1.3, 1.5, 1.5, 1.4,
+		statBonuses: [6]float64{
+			0.5, 0.6, 1.3, 0.7, 1.5, 1.4,
 		},
 	}
 	l.AddCharClass(&Necromancer)
