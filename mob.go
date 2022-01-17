@@ -145,14 +145,14 @@ func (m *MOB) Init() {
 	m.Experience = 0
 	rand.Seed(time.Now().UnixMilli())
 
-	baseCStats := CharStats{
-		Strength:     uint8(rand.Intn(17) + 4),
-		Constitution: uint8(rand.Intn(17) + 4),
-		Agility:      uint8(rand.Intn(17) + 4),
-		Dexterity:    uint8(rand.Intn(17) + 4),
-		Intelligence: uint8(rand.Intn(17) + 4),
-		Wisdom:       uint8(rand.Intn(17) + 4),
+	var stats [NUM_STATS]uint8
+	for i := range stats {
+		stats[i] = uint8(rand.Intn(17) + 4)
 	}
+	baseCStats := CharStats{
+		Stats: stats,
+	}
+
 	m.BaseCharStats = &baseCStats
 	m.CurCharStats = baseCStats.copyOf()
 

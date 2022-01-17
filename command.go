@@ -196,12 +196,11 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 
 		output.WriteString(Yellow("\r\n                  Score   Bonus\r\n"))
 		output.WriteString("                  -----   -----\r\n")
-		output.WriteString(fmt.Sprintf("Strength:         %2v\r\n", m.curCharStats().strength()))
-		output.WriteString(fmt.Sprintf("Constitution:     %2v\r\n", m.curCharStats().constitution()))
-		output.WriteString(fmt.Sprintf("Agility:          %2v\r\n", m.curCharStats().agility()))
-		output.WriteString(fmt.Sprintf("Dexterity:        %2v\r\n", m.curCharStats().dexterity()))
-		output.WriteString(fmt.Sprintf("Intelligence:     %2v\r\n", m.curCharStats().intelligence()))
-		output.WriteString(fmt.Sprintf("Wisdom:           %2v\r\n", m.curCharStats().wisdom()))
+
+		for stat, value := range m.curCharStats().AllStats() {
+			output.WriteString(fmt.Sprintf("%-18v%2v\r\n",
+				StatToString(uint8(stat))+":", value))
+		}
 
 		output.WriteString("\r\nTry STATS or HEALTH commands.")
 
