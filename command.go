@@ -166,6 +166,10 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 		} else {
 			target := m.Victim
 			if target != nil {
+				if target.Room != m.Room {
+					m.SendMessage("You don't see them here.", true)
+					return success
+				}
 				m.attackTarget(target)
 				success = true
 			} else {
