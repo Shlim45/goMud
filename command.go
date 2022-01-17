@@ -76,17 +76,6 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World) bool {
 		newName := input[len(input)-1]
 		m.SetName(newName)
 		m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
-		if strings.Compare(newName, "Karsus") == 0 {
-			m.baseCharStats().setStrength(19)
-			m.baseCharStats().setConstitution(15)
-			m.baseCharStats().setAgility(20)
-			m.baseCharStats().setDexterity(19)
-			m.baseCharStats().setIntelligence(17)
-			m.baseCharStats().setWisdom(15)
-			m.recoverCharStats()
-			m.recoverPhyStats()
-			m.SendMessage("You shake under the transforming power!", false)
-		}
 		success = true
 
 	case "reroll":

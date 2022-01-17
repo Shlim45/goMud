@@ -142,13 +142,24 @@ func (m *MOB) Tick(tType TickType) bool {
 }
 
 func (m *MOB) Init() {
-	m.Experience = 0
 	rand.Seed(time.Now().UnixMilli())
 
 	var stats [NUM_STATS]uint8
-	for i := range stats {
-		stats[i] = uint8(rand.Intn(17) + 4)
+
+	if strings.Compare(m.Name(), "Karsus") == 0 {
+		stats[STAT_STRENGTH] = 19
+		stats[STAT_CONSTITUTION] = 15
+		stats[STAT_AGILITY] = 20
+		stats[STAT_DEXTERITY] = 19
+		stats[STAT_INTELLIGENCE] = 17
+		stats[STAT_WISDOM] = 15
+		m.SendMessage("You shake under the transforming power!", false)
+	} else {
+		for i := range stats {
+			stats[i] = uint8(rand.Intn(17) + 4)
+		}
 	}
+
 	baseCStats := CharStats{
 		Stats: stats,
 	}
@@ -157,14 +168,14 @@ func (m *MOB) Init() {
 	m.CurCharStats = baseCStats.copyOf()
 
 	baseStats := PhyStats{
-		Attack:       uint16(3 * (m.BaseCharStats.dexterity() / 4.0)),
-		Damage:       uint16(3 * (m.BaseCharStats.strength() / 4.0)),
-		Evasion:      uint16(m.BaseCharStats.agility() / 2.0),
-		Defense:      uint16(m.BaseCharStats.constitution() / 2.0),
+		Attack:       uint16(3 * (m.BaseCharStats.dexterity() / 4)),
+		Damage:       uint16(3 * (m.BaseCharStats.strength() / 4)),
+		Evasion:      uint16(m.BaseCharStats.agility() / 2),
+		Defense:      uint16(m.BaseCharStats.constitution() / 2),
 		MagicAttack:  uint16(m.BaseCharStats.wisdom()),
 		MagicDamage:  uint16(m.BaseCharStats.intelligence()),
-		MagicEvasion: uint16(3 * (m.BaseCharStats.wisdom() / 4.0)),
-		MagicDefense: uint16(3 * (m.BaseCharStats.intelligence() / 4.0)),
+		MagicEvasion: uint16(3 * (m.BaseCharStats.wisdom() / 4)),
+		MagicDefense: uint16(3 * (m.BaseCharStats.intelligence() / 4)),
 		Level:        1 + uint8(m.Experience/1000),
 	}
 	m.BasePhyStats = &baseStats
@@ -182,7 +193,9 @@ func (m *MOB) Init() {
 	m.MaxState = &baseState
 	m.CurState = baseState.copyOf()
 
+	// should only be stop on new mobs
 	if m.tickType == TICK_STOP {
+		m.Experience = 0
 		if m.isPlayer() {
 			m.tickType = TICK_PLAYER
 		} else {
