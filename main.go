@@ -7,6 +7,9 @@ import (
 func main() {
 	ch := make(chan SessionEvent)
 
+	db := NewDatabase()
+	db.Initialize()
+
 	world := NewWorld()
 	world.Init()
 
