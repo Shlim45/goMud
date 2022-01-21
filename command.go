@@ -74,14 +74,39 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 
 	case "rename":
 		newName := input[len(input)-1]
-		m.SetName(newName)
-		m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
-		if strings.Compare(newName, "Karsus") == 0 {
-
-		} else if strings.Compare(newName, "Czerk") == 0 {
-
+		_, exists := w.characters[newName]
+		if !exists {
+			delete(w.characters, m.Name())
+			m.SetName(newName)
+			w.characters[m.Name()] = m
+			m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
+			if strings.Compare(newName, "Karsus") == 0 {
+				account := NewAccount()
+				account.SetUserName("shlimdig")
+				account.SetPasswordHash("backstab")
+				account.SetMaxChars(3)
+				account.SetLastIP(m.User.Session.conn.LocalAddr().String())
+				account.SetLastDate(time.Now())
+				account.SetEmail("dumbmfkr99@hotmail.com")
+				account.characters[newName] = m
+				w.accounts[account.UserName()] = account
+				m.User.Account = account
+			} else if strings.Compare(newName, "Czerk") == 0 {
+				account := NewAccount()
+				account.SetUserName("shlimdig")
+				account.SetPasswordHash("backstab")
+				account.SetMaxChars(3)
+				account.SetLastIP(m.User.Session.conn.LocalAddr().String())
+				account.SetLastDate(time.Now())
+				account.SetEmail("dumbmfkr99@hotmail.com")
+				account.characters[newName] = m
+				w.accounts[account.UserName()] = account
+				m.User.Account = account
+			}
+			success = true
+		} else {
+			m.SendMessage("That name is already in use.", true)
 		}
-		success = true
 
 	case "reroll":
 		m.Init(library)
@@ -460,6 +485,9 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 			m.SendMessage(fmt.Sprintf("There isn't a '%s' here.", targetPortal), true)
 			return success
 		}
+
+	case "shutdown":
+		SaveAndShutdownServer(w, library)
 
 	default:
 		log.Panicf("Command with trigger '%s' not found.", c.Trigger())

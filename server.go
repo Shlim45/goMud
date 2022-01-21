@@ -40,7 +40,6 @@ func handleConnection(conn net.Conn, inputChannel chan SessionEvent) error {
 			break
 		}
 		input := strings.TrimSpace(string(buf[0 : n-2]))
-		//log.Println("Received message:", input)
 
 		inputChannel <- SessionEvent{session, &SessionInputEvent{input}}
 	}
@@ -69,5 +68,4 @@ func startServer(eventChannel chan SessionEvent) error {
 			}
 		}()
 	}
-	//return nil
 }

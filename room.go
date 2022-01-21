@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -9,13 +10,96 @@ type RoomLink struct {
 	RoomId string
 }
 
+type Direction uint8
+
+const (
+	SOUTHWEST = iota
+	SOUTH
+	SOUTHEAST
+	WEST
+	EAST
+	NORTHWEST
+	NORTH
+	NORTHEAST
+	UP
+	DOWN
+	OUT
+)
+
+func (d Direction) Verb() string {
+	switch d {
+	case SOUTHWEST:
+		return "southwest"
+	case SOUTH:
+		return "south"
+	case SOUTHEAST:
+		return "southeast"
+	case WEST:
+		return "west"
+	case EAST:
+		return "east"
+	case NORTHWEST:
+		return "northwest"
+	case NORTH:
+		return "north"
+	case NORTHEAST:
+		return "northeast"
+	case UP:
+		return "up"
+	case DOWN:
+		return "down"
+	case OUT:
+		return "out"
+	default:
+		return "unknown"
+	}
+}
+
+func VerbToDirection(verb string) Direction {
+	switch verb {
+	case "southwest":
+		return SOUTHWEST
+	case "south":
+		return SOUTH
+	case "southeast":
+		return SOUTHEAST
+	case "west":
+		return WEST
+	case "east":
+		return EAST
+	case "northwest":
+		return NORTHWEST
+	case "north":
+		return NORTH
+	case "northeast":
+		return NORTHEAST
+	case "up":
+		return UP
+	case "down":
+		return DOWN
+	case "out":
+		return OUT
+	default: // TODO(jon): BAD returning OUT for default.
+		return OUT
+	}
+}
+
 type Room struct {
+	roomID  string
 	Id      string
 	Desc    string
+	Area    *Area
 	Links   []*RoomLink
 	Portals []*RoomLink
 	Items   []*Item
 	Mobs    []*MOB
+}
+
+func (r *Room) RoomID() string {
+	if r.Area != nil {
+		return fmt.Sprintf("%s#%s", r.Area.Name, r.Id)
+	}
+	return r.Id
 }
 
 func (r *Room) AddItem(item *Item) {
@@ -64,8 +148,8 @@ func (r *Room) ShowOthers(source *MOB, target *MOB, msg string) {
 func (r *Room) ShowRoom(player *MOB) {
 	var output strings.Builder
 
-	output.WriteString("[" + CArea("Darkness Falls") + "]\r\n") // area name
-	output.WriteString(CNormal(player.Room.Desc))
+	output.WriteString("[" + CArea(r.Area.Name) + "]\r\n") // area name
+	output.WriteString(CNormal("You're " + player.Room.Desc))
 	output.WriteString("\r\n")
 
 	numMobs := len(r.Mobs) - 1
@@ -162,4 +246,14 @@ func (r *Room) FetchInhabitant(mobName string) *MOB {
 		}
 	}
 	return nil
+}
+
+func (r *Room) SaveRoomToDBQuery() string {
+	links := []string{"", "", "", "", "", "", "", "", "", "", ""}
+	for _, link := range r.Links {
+		links[VerbToDirection(link.Verb)] = link.RoomId
+	}
+
+	return fmt.Sprintf("INSERT INTO Room VALUES ('%s', '%s', '%s', '%s')",
+		r.Id, "Darkness Falls", r.Desc, strings.Join(links, ";"))
 }

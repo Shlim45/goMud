@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -8,7 +9,7 @@ import (
 )
 
 type MOB struct {
-	name          string
+	name          string `json:"name"`
 	User          *User
 	Room          *Room
 	CurState      *CharState
@@ -17,10 +18,10 @@ type MOB struct {
 	CurPhyStats   *PhyStats
 	BaseCharStats *CharStats
 	CurCharStats  *CharStats
-	Experience    uint64
-	RealmPoints   uint32
+	Experience    uint64 `json:"exp"`
+	RealmPoints   uint32 `json:"rp"`
 	inventory     []*Item
-	Coins         uint64
+	Coins         uint64 `json:"coins"`
 	tickType      TickType
 	tickCount     uint64
 	Victim        *MOB
@@ -146,6 +147,7 @@ func (m *MOB) Init(library *MudLib) {
 
 	var stats [NUM_STATS]uint8
 
+	var newRace Race
 	var newClass CharClass
 	if strings.Compare(m.Name(), "Karsus") == 0 {
 		stats[STAT_STRENGTH] = 19
@@ -154,6 +156,7 @@ func (m *MOB) Init(library *MudLib) {
 		stats[STAT_DEXTERITY] = 19
 		stats[STAT_INTELLIGENCE] = 17
 		stats[STAT_WISDOM] = 15
+		newRace = library.FindRace("Skeleton")
 		newClass = library.FindCharClass("Skeleton")
 		m.SendMessage("You shake under the transforming power!", false)
 	} else if strings.Compare(m.Name(), "Czerk") == 0 {
@@ -163,18 +166,21 @@ func (m *MOB) Init(library *MudLib) {
 		stats[STAT_DEXTERITY] = 18
 		stats[STAT_INTELLIGENCE] = 19
 		stats[STAT_WISDOM] = 18
+		newRace = library.FindRace("Necromancer")
 		newClass = library.FindCharClass("Necromancer")
 		m.SendMessage("You shake under the transforming power!", false)
 	} else {
 		for i := range stats {
 			stats[i] = uint8(rand.Intn(17) + 4)
 		}
+		newRace = library.FindRace("Human")
 		newClass = library.FindCharClass("Fighter")
 	}
 
 	baseCStats := CharStats{
 		stats:     stats,
 		charClass: newClass,
+		race:      newRace,
 	}
 	m.BaseCharStats = &baseCStats
 	m.CurCharStats = baseCStats.copyOf()
@@ -441,6 +447,67 @@ func (m *MOB) releaseCorpse(w *World) {
 		m.Room.ShowOthers(m, nil, fmt.Sprintf("%s appears in a puff of smoke.", m.Name()))
 		return
 	}
+}
+
+type PlayerDB struct {
+	name       string `json:"name"`
+	account    string `json:"account"`
+	class      string `json:"class"`
+	race       string `json:"race"`
+	room       string `json:"room"`
+	coins      uint64 `json:"coins"`
+	stre       uint8  `json:"stre"`
+	cons       uint8  `json:"cons"`
+	agil       uint8  `json:"agil"`
+	dext       uint8  `json:"dext"`
+	inte       uint8  `json:"inte"`
+	wisd       uint8  `json:"wisd"`
+	con_loss   uint8  `json:"con_loss"`
+	level      uint8  `json:"level"`
+	exp        uint64 `json:"exp"`
+	rp         uint32 `json:"rp"`
+	hits       uint16 `json:"hits"`
+	fat        uint16 `json:"fat"`
+	power      uint16 `json:"power"`
+	trains     uint16 `json:"trains"`
+	guild      string `json:"guild"`
+	guild_rank uint8  `json:"guild_rank"`
+	last_date  string `json:"last_date"`
+}
+
+func (m *MOB) SavePlayerToDBQuery() (string, error) {
+	if m == nil {
+		return "", errors.New("MOB is nil")
+	}
+	player := PlayerDB{
+		name:       m.Name(),
+		account:    m.User.Account.UserName(),
+		class:      m.baseCharStats().CurrentClass().Name(),
+		race:       m.baseCharStats().Race().Name(),
+		room:       m.Room.roomID,
+		coins:      m.Coins,
+		stre:       m.baseCharStats().Stat(STAT_STRENGTH),
+		cons:       m.baseCharStats().Stat(STAT_CONSTITUTION),
+		agil:       m.baseCharStats().Stat(STAT_AGILITY),
+		dext:       m.baseCharStats().Stat(STAT_DEXTERITY),
+		inte:       m.baseCharStats().Stat(STAT_INTELLIGENCE),
+		wisd:       m.baseCharStats().Stat(STAT_WISDOM),
+		con_loss:   0,
+		level:      m.basePhyStats().level(),
+		exp:        m.Experience,
+		rp:         m.RealmPoints,
+		hits:       m.maxState().hits(),
+		fat:        m.maxState().fat(),
+		power:      m.maxState().power(),
+		trains:     0,
+		guild:      "",
+		guild_rank: 0,
+		last_date:  TimeString(time.Now()),
+	}
+	return fmt.Sprintf("INSERT INTO Player VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, '%s', %d, '%s')",
+			player.name, player.account, player.class, player.race, player.room, player.coins, player.stre, player.cons, player.agil, player.dext, player.inte, player.wisd,
+			player.con_loss, player.level, player.exp, player.rp, player.hits, player.fat, player.power, player.trains, player.guild, player.guild_rank, player.last_date),
+		nil // the error
 }
 
 func generateName() string {

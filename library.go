@@ -13,23 +13,28 @@ type Library interface {
 	RemoveCharClass(toRemove CharClass) bool
 	FindCharClass(search string) CharClass
 
+	Races() map[string]Race
+	AddRace(newClass Race)
+	RemoveRace(toRemove Race) bool
+	FindRace(search string) Race
+
 	Combat() string
 }
 
 type MudLib struct {
 	commands    map[string]*Command
 	charClasses map[string]CharClass
+	races       map[string]Race
 	combat      string
 	world       *World
 }
 
 func NewLibrary(world *World) *MudLib {
-	commands := make(map[string]*Command)
-	charClasses := make(map[string]CharClass)
 	var combat string
 	return &MudLib{
-		commands:    commands,
-		charClasses: charClasses,
+		commands:    make(map[string]*Command),
+		charClasses: make(map[string]CharClass),
+		races:       make(map[string]Race),
 		combat:      combat,
 		world:       world,
 	}
@@ -137,6 +142,70 @@ func (l *MudLib) LoadCharClasses() {
 		},
 	}
 	l.AddCharClass(&Necromancer)
+}
+
+func (l *MudLib) Races() map[string]Race {
+	return l.races
+}
+
+func (l *MudLib) AddRace(newRace Race) {
+	_, exists := l.races[newRace.Name()]
+	if !exists {
+		l.races[newRace.Name()] = newRace
+	}
+}
+
+func (l *MudLib) RemoveRace(toRemove Race) bool {
+	_, exists := l.races[toRemove.Name()]
+	delete(l.races, toRemove.Name())
+	return exists
+}
+
+func (l *MudLib) FindRace(search string) Race {
+	// find exact match
+	race, exists := l.races[search]
+	if exists {
+		return race
+	}
+
+	search = strings.ToLower(search)
+	// find partial match
+	for name, pRace := range l.Races() {
+		if strings.HasPrefix(strings.ToLower(name), search) {
+			return pRace
+		}
+	}
+
+	return nil
+}
+
+func (l *MudLib) LoadRaces() {
+	Human := PlayerRace{
+		name:    "Human",
+		enabled: false,
+		statBonuses: [6]float64{
+			1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+		},
+	}
+	l.AddRace(&Human)
+
+	Skeleton := PlayerRace{
+		name:    "Skeleton",
+		enabled: true,
+		statBonuses: [6]float64{
+			1.5, 0.6, 1.4, 1.6, 0.4, 0.5,
+		},
+	}
+	l.AddRace(&Skeleton)
+
+	Necromancer := PlayerRace{
+		name:    "Necromancer",
+		enabled: true,
+		statBonuses: [6]float64{
+			0.5, 0.6, 1.3, 0.7, 1.5, 1.4,
+		},
+	}
+	l.AddRace(&Necromancer)
 }
 
 func (l *MudLib) LoadCommands() {
@@ -319,6 +388,16 @@ func (l *MudLib) LoadCommands() {
 		checkTimer: true,
 	}
 	l.AddCommand(&GoCmd)
+
+	ShutdownCmd := Command{
+		trigger:    "shutdown",
+		timer:      0,
+		timerType:  TIMER_NONE,
+		costType:   COST_NONE,
+		useCost:    0,
+		checkTimer: false,
+	}
+	l.AddCommand(&ShutdownCmd)
 }
 
 func (l *MudLib) Combat() string {

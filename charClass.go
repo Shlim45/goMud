@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type CharClass interface {
 	SetName(name string)
 	Name() string
@@ -11,6 +13,7 @@ type CharClass interface {
 	Realm() Realm
 	SetStatBonuses(statBonuses [NUM_STATS]float64)
 	StatBonuses() *[NUM_STATS]float64
+	SaveCharClassToDBQuery() string
 }
 
 type PlayerClass struct {
@@ -55,4 +58,9 @@ func (pc *PlayerClass) SetStatBonuses(statBonuses [NUM_STATS]float64) {
 
 func (pc *PlayerClass) StatBonuses() *[NUM_STATS]float64 {
 	return &pc.statBonuses
+}
+
+func (pc *PlayerClass) SaveCharClassToDBQuery() string {
+	return fmt.Sprintf("INSERT INTO CharClass VALUES ('%s', %d, %v)",
+		pc.Name(), uint8(pc.Realm()), pc.Enabled())
 }

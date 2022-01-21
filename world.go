@@ -7,19 +7,42 @@ import (
 )
 
 type World struct {
-	characters []*MOB
-	rooms      []*Room
+	accounts    map[string]*Account
+	charClasses map[string]CharClass
+	characters  map[string]*MOB
+	areas       map[string]*Area
+	rooms       []*Room
+	db          DBConnection
 }
 
-func NewWorld() *World {
-	return &World{}
+func NewWorld(db DBConnection) *World {
+	return &World{
+		accounts:    make(map[string]*Account),
+		charClasses: make(map[string]CharClass),
+		characters:  make(map[string]*MOB),
+		areas:       make(map[string]*Area),
+		db:          db,
+	}
+}
+
+func (w *World) AddArea(area *Area) {
+	_, exists := w.areas[area.Name]
+	if !exists {
+		w.areas[area.Name] = area
+	}
 }
 
 func (w *World) Init() {
+	w.areas["Darkness Falls"] = &Area{
+		Name:  "Darkness Falls",
+		Realm: REALM_IMMORTAL,
+	}
+
 	w.rooms = []*Room{
 		{
 			Id:   "A",
-			Desc: "You're standing in a room with a sign that has the letter A on it.",
+			Desc: "standing in a room with a sign that has the letter A on it.",
+			Area: w.areas["Darkness Falls"],
 			Links: []*RoomLink{
 				{
 					Verb:   "east",
@@ -30,7 +53,8 @@ func (w *World) Init() {
 		},
 		{
 			Id:   "B",
-			Desc: "You're standing in a room with a sign that has the letter B on it.",
+			Desc: "standing in a room with a sign that has the letter B on it.",
+			Area: w.areas["Darkness Falls"],
 			Links: []*RoomLink{
 				{
 					Verb:   "west",
@@ -50,7 +74,8 @@ func (w *World) Init() {
 		},
 		{
 			Id:   "C",
-			Desc: "You're standing in a room with a sign that has the letter C on it.",
+			Desc: "standing in a room with a sign that has the letter C on it.",
+			Area: w.areas["Darkness Falls"],
 			Links: []*RoomLink{
 				{
 					Verb:   "west",
@@ -61,7 +86,8 @@ func (w *World) Init() {
 		},
 		{
 			Id:    "D",
-			Desc:  "You're standing in a room hidden behind a gate.  There is a sign that has the letter D on it.",
+			Desc:  "standing in a room hidden behind a gate.  There is a sign that has the letter D on it.",
+			Area:  w.areas["Darkness Falls"],
 			Links: []*RoomLink{},
 			Portals: []*RoomLink{
 				{
@@ -71,9 +97,12 @@ func (w *World) Init() {
 			},
 		},
 	}
+	areaRooms := w.rooms
+	w.areas["Darkness Falls"].Rooms = areaRooms
 }
 
 func (w *World) HandleCharacterJoined(character *MOB) {
+	w.characters[character.Name()] = character
 	w.rooms[0].AddMOB(character)
 
 	character.SendMessage("Welcome to Darkness Falls\n\r", true)

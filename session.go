@@ -75,12 +75,14 @@ func (h *SessionHandler) Start() {
 		case *SessionCreatedEvent:
 			// create user
 
+			session.WriteLine("Username: ")
+			session.WriteLine("Password: ")
 			character := &MOB{
 				name:     generateName(),
 				tickType: TICK_STOP,
 			}
 
-			user := &User{session, character, true}
+			user := &User{session, nil, character, true}
 			character.User = user
 
 			character.Init(h.library)

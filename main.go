@@ -10,11 +10,15 @@ func main() {
 	db := NewDatabase()
 	db.Initialize()
 
-	world := NewWorld()
-	world.Init()
+	world := NewWorld(db)
+	//world.Init()
+
+	db.LoadAreas(world)
+	db.LoadRooms(world)
 
 	library := NewLibrary(world)
 	library.LoadCommands()
+	library.LoadRaces()
 	library.LoadCharClasses()
 
 	sessionHandler := NewSessionHandler(world, library, ch)

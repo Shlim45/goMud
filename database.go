@@ -4,12 +4,22 @@ import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"strings"
+	"time"
 )
 
 type DBConnection interface {
+	DatabaseConnection() *sql.DB
 	Initialize()
 	Update(query string) bool
 	Query(query string) *sql.Rows
+	LoadRooms(w *World)
+	SaveRooms(w *World)
+	SaveAreas(w *World)
+	SavePlayers(w *World)
+	SaveAccounts(w *World)
+	SaveCharClasses(lib *MudLib)
+	SaveRaces(lib *MudLib)
 }
 
 type DatabaseConnection struct {
@@ -31,6 +41,10 @@ func DBConnect() *sql.DB {
 	// TODO(jon): handle during shutdown
 	//defer db.Close()
 	return db
+}
+
+func (db *DatabaseConnection) DatabaseConnection() *sql.DB {
+	return db.DB
 }
 
 func (db *DatabaseConnection) Initialize() {
@@ -118,8 +132,8 @@ func (db *DatabaseConnection) Initialize() {
 func (db *DatabaseConnection) Update(query string) bool {
 	insert, err := db.DB.Query(query)
 	if err != nil {
-		log.Panic(err.Error())
-		panic(err.Error())
+		log.Println(err.Error())
+		//panic(err.Error())
 		return false
 	}
 	defer insert.Close()
@@ -129,8 +143,151 @@ func (db *DatabaseConnection) Update(query string) bool {
 func (db *DatabaseConnection) Query(query string) *sql.Rows {
 	results, err := db.DB.Query(query)
 	if err != nil {
-		panic(err.Error())
+		log.Println(err.Error())
+		//panic(err.Error())
+	}
+	return results
+}
+
+type AreaTag struct {
+	Name  string `json:"name"`
+	Realm uint8  `json:"realm"`
+}
+
+func (db *DatabaseConnection) LoadAreas(w *World) {
+	log.Println("Loading areas...")
+	results := db.Query("SELECT * FROM Area")
+
+	for results.Next() {
+		var areaTag AreaTag
+		err := results.Scan(&areaTag.Name, &areaTag.Realm)
+		if err != nil {
+			log.Println(err.Error())
+			//panic(err.Error())
+		}
+
+		newArea := Area{
+			Name:  areaTag.Name,
+			Realm: Realm(areaTag.Realm),
+		}
+		w.AddArea(&newArea)
 	}
 	defer results.Close()
-	return results
+
+	log.Println("Done loading areas.")
+}
+
+type RoomTag struct {
+	ID    string `json:"room_id"`
+	Area  string `json:"area"`
+	Desc  string `json:"description"`
+	Links string `json:"links"`
+}
+
+func (db *DatabaseConnection) LoadRooms(w *World) {
+	log.Println("Loading rooms...")
+
+	results := db.Query("SELECT * FROM Room")
+
+	for results.Next() {
+		var roomTag RoomTag
+		err := results.Scan(&roomTag.ID, &roomTag.Area, &roomTag.Desc, &roomTag.Links)
+		if err != nil {
+			log.Println(err.Error())
+			//panic(err.Error())
+		}
+
+		var roomLinks []*RoomLink
+		for n, room := range strings.Split(roomTag.Links, ";") {
+			if len(room) == 0 {
+				continue
+			}
+			link := RoomLink{
+				Verb:   Direction(n).Verb(),
+				RoomId: room,
+			}
+			roomLinks = append(roomLinks, &link)
+		}
+
+		newRoom := Room{
+			Id:      roomTag.ID,
+			Desc:    roomTag.Desc,
+			Area:    w.areas[roomTag.Area],
+			Links:   roomLinks,
+			Portals: nil,
+			Items:   nil,
+			Mobs:    nil,
+		}
+		/*
+			for n, r := range strings.Split(roomTag.Links, ",") {
+				if len(r) > 0 {
+					roomLink := RoomLink{
+						Verb:   Direction(n).Verb(),
+						RoomId: r,
+					}
+					newRoom.Links = append(newRoom.Links, &roomLink)
+				}
+			}
+		*/
+		w.rooms = append(w.rooms, &newRoom)
+	}
+
+	defer results.Close()
+	log.Println("Done loading rooms...")
+}
+
+func (db *DatabaseConnection) SaveRooms(w *World) {
+	log.Println("Saving rooms...")
+	for _, room := range w.rooms {
+		db.Update(room.SaveRoomToDBQuery())
+	}
+	log.Println("Done saving rooms.")
+}
+
+func (db *DatabaseConnection) SaveAreas(w *World) {
+	log.Println("Saving areas...")
+	for _, area := range w.areas {
+		db.Update(area.SaveAreaToDBQuery())
+	}
+	log.Println("Done saving areas.")
+}
+
+func (db *DatabaseConnection) SavePlayers(w *World) {
+	log.Println("Saving players...")
+	for _, c := range w.characters {
+		update, err := c.SavePlayerToDBQuery()
+		if err == nil {
+			db.Update(update)
+		}
+	}
+	log.Println("Done saving players.")
+}
+
+func (db *DatabaseConnection) SaveAccounts(w *World) {
+	log.Println("Saving user accounts...")
+	for _, acc := range w.accounts {
+		db.Update(acc.SaveAccountToDBQuery())
+	}
+	log.Println("Done saving accounts.")
+}
+
+func (db *DatabaseConnection) SaveCharClasses(lib *MudLib) {
+	log.Println("Saving classes...")
+	for _, cClass := range lib.CharClasses() {
+		db.Update(cClass.SaveCharClassToDBQuery())
+	}
+	log.Println("Done saving classes.")
+}
+
+func (db *DatabaseConnection) SaveRaces(lib *MudLib) {
+	log.Println("Saving races...")
+	for _, race := range lib.Races() {
+		db.Update(race.SaveRaceToDBQuery())
+	}
+	log.Println("Done saving races.")
+}
+
+// TimeString - given a time, return the MySQL standard string representation
+func TimeString(t time.Time) string {
+	return t.Format("2006-01-02 15:04:05.999999")
 }

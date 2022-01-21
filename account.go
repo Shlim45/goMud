@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"time"
@@ -86,4 +87,10 @@ func (a *Account) Email() string {
 
 func (a *Account) SetEmail(newEmail string) {
 	a.email = newEmail
+}
+
+func (a *Account) SaveAccountToDBQuery() string {
+	lastDate := TimeString(a.LastDate())
+	return fmt.Sprintf("INSERT INTO Account VALUES ('%s', '%s', %d, '%s', '%s', '%s')",
+		a.UserName(), a.PasswordHash(), a.MaxChars(), a.LastIP(), lastDate, a.Email())
 }

@@ -40,6 +40,11 @@ func StatToString(S uint8) string {
 type CharStats struct {
 	stats     [NUM_STATS]uint8
 	charClass CharClass
+	race      Race
+}
+
+func (cState *CharStats) Race() Race {
+	return cState.race
 }
 
 func (cState *CharStats) CurrentClass() CharClass {

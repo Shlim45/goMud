@@ -1,15 +1,16 @@
 package main
 
-type Entity struct {
-	entityId string
-}
-
-func (e *Entity) EntityId() string {
-	return e.entityId
-}
+//type Entity struct {
+//	entityId string
+//}
+//
+//func (e *Entity) EntityId() string {
+//	return e.entityId
+//}
 
 type User struct {
 	Session   *Session
+	Account   *Account
 	Character *MOB
 	ANSI      bool
 }
