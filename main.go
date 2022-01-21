@@ -18,8 +18,12 @@ func main() {
 
 	library := NewLibrary(world)
 	library.LoadCommands()
-	library.LoadRaces()
-	library.LoadCharClasses()
+	//library.LoadRaces()
+	//library.LoadCharClasses()
+	db.LoadRaces(library)
+	db.LoadClasses(library)
+	db.LoadAccounts(world)
+	db.LoadPlayers(world, library)
 
 	sessionHandler := NewSessionHandler(world, library, ch)
 	go sessionHandler.Start()

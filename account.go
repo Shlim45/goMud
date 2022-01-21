@@ -35,7 +35,11 @@ func (a *Account) PasswordHash() string {
 	return a.password
 }
 
-func (a *Account) SetPasswordHash(plainPass string) {
+func (a *Account) SetPasswordHash(hashedPass string) {
+	a.password = hashedPass
+}
+
+func (a *Account) HashAndSetPassword(plainPass string) {
 	passHash, err := HashPassword(plainPass)
 	if err != nil {
 		log.Panic(err.Error())
