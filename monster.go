@@ -9,12 +9,12 @@ import (
 type Monster struct {
 	name          string `json:"name"`
 	room          *Room
-	CurState      *CharState
-	MaxState      *CharState
-	BasePhyStats  *PhyStats
-	CurPhyStats   *PhyStats
-	BaseCharStats *CharStats
-	CurCharStats  *CharStats
+	curState      *CharState
+	maxState      *CharState
+	basePhyStats  *PhyStats
+	curPhyStats   *PhyStats
+	baseCharStats *CharStats
+	curCharStats  *CharStats
 	Experience    uint64 `json:"exp"`
 	inventory     []*Item
 	coins         uint64 `json:"coins"`
@@ -23,7 +23,7 @@ type Monster struct {
 	victim        MOB
 }
 
-func (m *Monster) isPlayer() bool {
+func (m *Monster) IsPlayer() bool {
 	return false
 }
 
@@ -93,7 +93,7 @@ func (m *Monster) AttackVictim() {
 		return
 	}
 	if victim.Room() == m.Room() {
-		m.attackTarget(victim)
+		m.AttackTarget(victim)
 	}
 }
 
@@ -107,7 +107,7 @@ func (m *Monster) Tick(tType TickType) bool {
 	case TickNormal:
 
 	case TickMonster:
-		if !m.curState().alive() {
+		if !m.CurState().alive() {
 			return false
 		}
 
@@ -142,34 +142,34 @@ func (m *Monster) Init(library *MudLib) {
 		charClass: newClass,
 		race:      newRace,
 	}
-	m.BaseCharStats = &baseCStats
-	m.CurCharStats = baseCStats.copyOf()
+	m.baseCharStats = &baseCStats
+	m.curCharStats = baseCStats.copyOf()
 
 	baseStats := PhyStats{
-		Attack:       uint16(3 * (m.BaseCharStats.Stats()[STAT_DEXTERITY] / 4)),
-		Damage:       uint16(3 * (m.BaseCharStats.Stats()[STAT_STRENGTH] / 4)),
-		Evasion:      uint16(m.BaseCharStats.Stats()[STAT_AGILITY] / 2),
-		Defense:      uint16(m.BaseCharStats.Stats()[STAT_CONSTITUTION] / 2),
-		MagicAttack:  uint16(m.BaseCharStats.Stats()[STAT_WISDOM]),
-		MagicDamage:  uint16(m.BaseCharStats.Stats()[STAT_INTELLIGENCE]),
-		MagicEvasion: uint16(3 * (m.BaseCharStats.Stats()[STAT_WISDOM] / 4)),
-		MagicDefense: uint16(3 * (m.BaseCharStats.Stats()[STAT_INTELLIGENCE] / 4)),
+		Attack:       uint16(3 * (m.BaseCharStats().Stats()[STAT_DEXTERITY] / 4)),
+		Damage:       uint16(3 * (m.BaseCharStats().Stats()[STAT_STRENGTH] / 4)),
+		Evasion:      uint16(m.BaseCharStats().Stats()[STAT_AGILITY] / 2),
+		Defense:      uint16(m.BaseCharStats().Stats()[STAT_CONSTITUTION] / 2),
+		MagicAttack:  uint16(m.BaseCharStats().Stats()[STAT_WISDOM]),
+		MagicDamage:  uint16(m.BaseCharStats().Stats()[STAT_INTELLIGENCE]),
+		MagicEvasion: uint16(3 * (m.BaseCharStats().Stats()[STAT_WISDOM] / 4)),
+		MagicDefense: uint16(3 * (m.BaseCharStats().Stats()[STAT_INTELLIGENCE] / 4)),
 		Level:        1 + uint8(m.Experience/1000),
 	}
-	m.BasePhyStats = &baseStats
-	m.CurPhyStats = baseStats.copyOf()
+	m.basePhyStats = &baseStats
+	m.curPhyStats = baseStats.copyOf()
 
 	baseState := CharState{
-		Hits:     uint16((baseStats.Level * 30) + (m.BaseCharStats.Stats()[STAT_CONSTITUTION] / 10.0)),
-		Fat:      uint16((baseStats.Level * 30) + (m.BaseCharStats.Stats()[STAT_CONSTITUTION] / 10.0)),
-		Power:    uint16((baseStats.Level * 20) + (m.BaseCharStats.Stats()[STAT_INTELLIGENCE] / 10.0)),
+		Hits:     uint16((baseStats.Level * 30) + (m.BaseCharStats().Stats()[STAT_CONSTITUTION] / 10.0)),
+		Fat:      uint16((baseStats.Level * 30) + (m.BaseCharStats().Stats()[STAT_CONSTITUTION] / 10.0)),
+		Power:    uint16((baseStats.Level * 20) + (m.BaseCharStats().Stats()[STAT_INTELLIGENCE] / 10.0)),
 		Alive:    true,
 		Standing: true,
 		Sitting:  false,
 		Laying:   false,
 	}
-	m.MaxState = &baseState
-	m.CurState = baseState.copyOf()
+	m.maxState = &baseState
+	m.curState = baseState.copyOf()
 
 	// should only be stop on new mobs
 	if m.tickType == TickStop {
@@ -179,98 +179,99 @@ func (m *Monster) Init(library *MudLib) {
 	}
 }
 
-func (m *Monster) basePhyStats() *PhyStats {
-	return m.BasePhyStats
+func (m *Monster) BasePhyStats() *PhyStats {
+	return m.basePhyStats
 }
 
-func (m *Monster) curPhyStats() *PhyStats {
-	return m.CurPhyStats
+func (m *Monster) CurPhyStats() *PhyStats {
+	return m.curPhyStats
 }
 
-func (m *Monster) recoverPhyStats() {
-	m.CurPhyStats = m.BasePhyStats.copyOf()
+func (m *Monster) RecoverPhyStats() {
+	m.curPhyStats = m.BasePhyStats().copyOf()
 }
 
-func (m *Monster) curState() *CharState {
-	return m.CurState
+func (m *Monster) CurState() *CharState {
+	return m.curState
 }
 
-func (m *Monster) maxState() *CharState {
-	return m.MaxState
+func (m *Monster) MaxState() *CharState {
+	return m.maxState
 }
 
-func (m *Monster) recoverCharState() {
-	m.CurState = m.maxState().copyOf()
+func (m *Monster) RecoverCharState() {
+	m.curState = m.MaxState().copyOf()
 }
 
-func (m *Monster) curCharStats() *CharStats {
-	return m.CurCharStats
+func (m *Monster) CurCharStats() *CharStats {
+	return m.curCharStats
 }
 
-func (m *Monster) baseCharStats() *CharStats {
-	return m.BaseCharStats
+func (m *Monster) BaseCharStats() *CharStats {
+	return m.baseCharStats
 }
 
-func (m *Monster) recoverCharStats() {
-	m.CurCharStats = m.BaseCharStats.copyOf()
+func (m *Monster) RecoverCharStats() {
+	m.curCharStats = m.BaseCharStats().copyOf()
 }
 
-func (m *Monster) adjHits(amount int16, max uint16) {
-	newHits := int32(m.curState().hits()) + int32(amount)
-	if newHits < 0 {
-		m.curState().setHits(0)
-	} else if newHits > int32(max) {
-		m.curState().setHits(max)
-	} else {
-		m.curState().setHits(uint16(newHits))
-	}
-}
-
-func (m *Monster) adjFat(amount int16, max uint16) {
-	newFat := int32(m.curState().fat()) + int32(amount)
-	if newFat < 0 {
-		m.curState().setFat(0)
-	} else if newFat > int32(max) {
-		m.curState().setFat(max)
-	} else {
-		m.curState().setFat(uint16(newFat))
-	}
-}
-
-func (m *Monster) adjPower(amount int16, max uint16) {
-	newPower := int32(m.curState().power()) + int32(amount)
-	if newPower < 0 {
-		m.curState().setPower(0)
-	} else if newPower > int32(max) {
-		m.curState().setPower(max)
-	} else {
-		m.curState().setPower(uint16(newPower))
-	}
-}
-
-func (m *Monster) adjMaxHits(amount int16) {
-	newHits := int32(m.maxState().hits()) + int32(amount)
-	if newHits < 0 {
-		newHits = 0
-	}
-	m.maxState().setHits(uint16(newHits))
-}
-
-func (m *Monster) adjMaxFat(amount int16) {
-	newFat := int32(m.maxState().fat()) + int32(amount)
-	if newFat < 0 {
-		newFat = 0
-	}
-	m.maxState().setFat(uint16(newFat))
-}
-
-func (m *Monster) adjMaxPower(amount int16) {
-	newPower := int32(m.maxState().power()) + int32(amount)
-	if newPower < 0 {
-		newPower = 0
-	}
-	m.maxState().setPower(uint16(newPower))
-}
+//
+//func (m *Monster) adjHits(amount int16, max uint16) {
+//	newHits := int32(m.CurState().hits()) + int32(amount)
+//	if newHits < 0 {
+//		m.CurState().setHits(0)
+//	} else if newHits > int32(max) {
+//		m.CurState().setHits(max)
+//	} else {
+//		m.CurState().setHits(uint16(newHits))
+//	}
+//}
+//
+//func (m *Monster) adjFat(amount int16, max uint16) {
+//	newFat := int32(m.CurState().fat()) + int32(amount)
+//	if newFat < 0 {
+//		m.CurState().setFat(0)
+//	} else if newFat > int32(max) {
+//		m.CurState().setFat(max)
+//	} else {
+//		m.CurState().setFat(uint16(newFat))
+//	}
+//}
+//
+//func (m *Monster) adjPower(amount int16, max uint16) {
+//	newPower := int32(m.CurState().power()) + int32(amount)
+//	if newPower < 0 {
+//		m.CurState().setPower(0)
+//	} else if newPower > int32(max) {
+//		m.CurState().setPower(max)
+//	} else {
+//		m.CurState().setPower(uint16(newPower))
+//	}
+//}
+//
+//func (m *Monster) adjMaxHits(amount int16) {
+//	newHits := int32(m.MaxState().hits()) + int32(amount)
+//	if newHits < 0 {
+//		newHits = 0
+//	}
+//	m.MaxState().setHits(uint16(newHits))
+//}
+//
+//func (m *Monster) adjMaxFat(amount int16) {
+//	newFat := int32(m.MaxState().fat()) + int32(amount)
+//	if newFat < 0 {
+//		newFat = 0
+//	}
+//	m.MaxState().setFat(uint16(newFat))
+//}
+//
+//func (m *Monster) adjMaxPower(amount int16) {
+//	newPower := int32(m.MaxState().power()) + int32(amount)
+//	if newPower < 0 {
+//		newPower = 0
+//	}
+//	m.MaxState().setPower(uint16(newPower))
+//}
 
 func (m *Monster) SendMessage(msg string, newLine bool) {
 	// TODO(jon): if possessed
@@ -281,7 +282,7 @@ func (m *Monster) Walk(dest *Room, verb string) {
 	m.Room().RemoveMOB(m)
 	dest.AddMOB(m)
 	dest.ShowRoom(m)
-	m.adjFat(-2, m.maxState().fat())
+	m.CurState().adjFat(-2, m.MaxState().fat())
 	m.Room().ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
 }
 
@@ -290,7 +291,7 @@ func (m *Monster) WalkThrough(port *Portal) {
 	m.Room().RemoveMOB(m)
 	port.DestRoom().AddMOB(m)
 	port.DestRoom().ShowRoom(m)
-	m.adjFat(-2, m.maxState().fat())
+	m.CurState().adjFat(-2, m.MaxState().fat())
 	m.Room().ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
 }
 
@@ -302,19 +303,19 @@ func (m *Monster) SetRoom(newRoom *Room) {
 	m.room = newRoom
 }
 
-func (m *Monster) attackTarget(target MOB) {
+func (m *Monster) AttackTarget(target MOB) {
 	if target == nil {
 		return
 	}
 
-	if !m.curState().alive() {
+	if !m.CurState().alive() {
 		return
-	} else if !target.curState().alive() {
+	} else if !target.CurState().alive() {
 		return
 	}
 
-	damage := int(m.curPhyStats().damage()) - int(target.curPhyStats().defense())
-	chance := int(m.curPhyStats().attack()) - int(target.curPhyStats().evasion())
+	damage := int(m.CurPhyStats().damage()) - int(target.CurPhyStats().defense())
+	chance := int(m.CurPhyStats().attack()) - int(target.CurPhyStats().evasion())
 
 	if damage < 0 {
 		damage = 0
@@ -326,18 +327,18 @@ func (m *Monster) attackTarget(target MOB) {
 		target.SendMessage(fmt.Sprintf("%s attacks you!  You are hit for %s damage.",
 			m.Name(), CDamageIn(damage)), true)
 
-		target.damageMOB(m, uint16(damage))
+		target.DamageMOB(m, uint16(damage))
 	} else {
 		target.SendMessage(fmt.Sprintf("%s attacks you!  They miss!", m.Name()), true)
 	}
 }
 
-func (m *Monster) killMOB(killer MOB) {
-	m.curState().setAlive(false)
+func (m *Monster) KillMOB(killer MOB) {
+	m.CurState().setAlive(false)
 	m.SetVictim(nil)
 	killer.SetVictim(nil)
 
-	expAward := uint64(m.curPhyStats().level() * 100)
+	expAward := uint64(m.CurPhyStats().level() * 100)
 	killer.Room().Show(killer, fmt.Sprintf("%s dies!", m.Name()))
 	killer.SendMessage(fmt.Sprintf("You gain %s experience!", CHighlight(expAward)), false)
 	killer.AwardExp(expAward)
@@ -345,10 +346,10 @@ func (m *Monster) killMOB(killer MOB) {
 
 }
 
-func (m *Monster) damageMOB(attacker MOB, dmg uint16) {
-	m.adjHits(int16(-dmg), m.maxState().hits())
-	if m.curState().hits() <= 0 {
-		m.killMOB(attacker)
+func (m *Monster) DamageMOB(attacker MOB, dmg uint16) {
+	m.CurState().adjHits(int16(-dmg), m.MaxState().hits())
+	if m.CurState().hits() <= 0 {
+		m.KillMOB(attacker)
 	}
 
 	attacker.SetVictim(m)

@@ -13,12 +13,12 @@ type Player struct {
 	Account       string
 	User          *User
 	room          *Room
-	CurState      *CharState
-	MaxState      *CharState
-	BasePhyStats  *PhyStats
-	CurPhyStats   *PhyStats
-	BaseCharStats *CharStats
-	CurCharStats  *CharStats
+	curState      *CharState
+	maxState      *CharState
+	basePhyStats  *PhyStats
+	curPhyStats   *PhyStats
+	baseCharStats *CharStats
+	curCharStats  *CharStats
 	Experience    uint64
 	RealmPoints   uint32
 	inventory     []*Item
@@ -58,100 +58,43 @@ func (p *Player) AdjCoins(amount int64) {
 	}
 }
 
-func (p *Player) basePhyStats() *PhyStats {
-	return p.BasePhyStats
+func (p *Player) BasePhyStats() *PhyStats {
+	return p.basePhyStats
 }
 
-func (p *Player) curPhyStats() *PhyStats {
-	return p.CurPhyStats
+func (p *Player) CurPhyStats() *PhyStats {
+	return p.curPhyStats
 }
 
-func (p *Player) recoverPhyStats() {
-	p.CurPhyStats = p.BasePhyStats.copyOf()
+func (p *Player) RecoverPhyStats() {
+	p.curPhyStats = p.BasePhyStats().copyOf()
 }
 
-func (p *Player) curState() *CharState {
-	return p.CurState
+func (p *Player) CurState() *CharState {
+	return p.curState
 }
 
-func (p *Player) maxState() *CharState {
-	return p.MaxState
+func (p *Player) MaxState() *CharState {
+	return p.maxState
 }
 
-func (p *Player) adjHits(amount int16, max uint16) {
-	newHits := int32(p.curState().hits()) + int32(amount)
-	if newHits < 0 {
-		p.curState().setHits(0)
-	} else if newHits > int32(max) {
-		p.curState().setHits(max)
-	} else {
-		p.curState().setHits(uint16(newHits))
-	}
+func (p *Player) RecoverCharState() {
+	p.curState = p.MaxState().copyOf()
 }
 
-func (p *Player) adjFat(amount int16, max uint16) {
-	newFat := int32(p.curState().fat()) + int32(amount)
-	if newFat < 0 {
-		p.curState().setFat(0)
-	} else if newFat > int32(max) {
-		p.curState().setFat(max)
-	} else {
-		p.curState().setFat(uint16(newFat))
-	}
+func (p *Player) CurCharStats() *CharStats {
+	return p.curCharStats
 }
 
-func (p *Player) adjPower(amount int16, max uint16) {
-	newPower := int32(p.curState().power()) + int32(amount)
-	if newPower < 0 {
-		p.curState().setPower(0)
-	} else if newPower > int32(max) {
-		p.curState().setPower(max)
-	} else {
-		p.curState().setPower(uint16(newPower))
-	}
+func (p *Player) BaseCharStats() *CharStats {
+	return p.baseCharStats
 }
 
-func (p *Player) adjMaxHits(amount int16) {
-	newHits := int32(p.maxState().hits()) + int32(amount)
-	if newHits < 0 {
-		newHits = 0
-	}
-	p.maxState().setHits(uint16(newHits))
+func (p *Player) RecoverCharStats() {
+	p.curCharStats = p.BaseCharStats().copyOf()
 }
 
-func (p *Player) adjMaxFat(amount int16) {
-	newFat := int32(p.maxState().fat()) + int32(amount)
-	if newFat < 0 {
-		newFat = 0
-	}
-	p.maxState().setFat(uint16(newFat))
-}
-
-func (p *Player) adjMaxPower(amount int16) {
-	newPower := int32(p.maxState().power()) + int32(amount)
-	if newPower < 0 {
-		newPower = 0
-	}
-	p.maxState().setPower(uint16(newPower))
-}
-
-func (p *Player) recoverCharState() {
-	p.CurState = p.maxState().copyOf()
-}
-
-func (p *Player) curCharStats() *CharStats {
-	return p.CurCharStats
-}
-
-func (p *Player) baseCharStats() *CharStats {
-	return p.BaseCharStats
-}
-
-func (p *Player) recoverCharStats() {
-	p.CurCharStats = p.BaseCharStats.copyOf()
-}
-
-func (p *Player) isPlayer() bool {
+func (p *Player) IsPlayer() bool {
 	return true
 }
 
@@ -205,7 +148,7 @@ func (p *Player) AttackVictim() {
 		return
 	}
 	if victim.Room() == p.Room() {
-		p.attackTarget(victim)
+		p.AttackTarget(victim)
 	}
 }
 
@@ -213,20 +156,20 @@ func (p *Player) Tick(tType TickType) bool {
 	if p == nil || tType == TickStop {
 		return false
 	}
-
+	p.tickType = tType
 	p.tickCount++
 	switch p.tickType {
 	case TickNormal:
 
 	case TickPlayer:
-		if p.curState().alive() {
+		if p.User != nil && p.User.Session.Status() == INGAME && p.CurState().alive() {
 			if p.tickCount%2 == 0 {
 				// heal power
-				p.adjPower(1, p.maxState().power())
+				p.CurState().adjPower(1, p.MaxState().power())
 			} else if p.tickCount%7 == 0 {
 				// heal hits and fat
-				p.adjHits(6, p.maxState().hits())
-				p.adjFat(8, p.maxState().fat())
+				p.CurState().adjHits(6, p.MaxState().hits())
+				p.CurState().adjFat(8, p.MaxState().fat())
 			}
 		}
 
@@ -258,34 +201,34 @@ func (p *Player) Init(library *MudLib) {
 		charClass: newClass,
 		race:      newRace,
 	}
-	p.BaseCharStats = &baseCStats
-	p.CurCharStats = baseCStats.copyOf()
+	p.baseCharStats = &baseCStats
+	p.curCharStats = baseCStats.copyOf()
 
 	baseStats := PhyStats{
-		Attack:       uint16(3 * (p.BaseCharStats.Stats()[STAT_DEXTERITY] / 4)),
-		Damage:       uint16(3 * (p.BaseCharStats.Stats()[STAT_STRENGTH] / 4)),
-		Evasion:      uint16(p.BaseCharStats.Stats()[STAT_AGILITY] / 2),
-		Defense:      uint16(p.BaseCharStats.Stats()[STAT_CONSTITUTION] / 2),
-		MagicAttack:  uint16(p.BaseCharStats.Stats()[STAT_WISDOM]),
-		MagicDamage:  uint16(p.BaseCharStats.Stats()[STAT_INTELLIGENCE]),
-		MagicEvasion: uint16(3 * (p.BaseCharStats.Stats()[STAT_WISDOM] / 4)),
-		MagicDefense: uint16(3 * (p.BaseCharStats.Stats()[STAT_INTELLIGENCE] / 4)),
+		Attack:       uint16(3 * (p.BaseCharStats().Stats()[STAT_DEXTERITY] / 4)),
+		Damage:       uint16(3 * (p.BaseCharStats().Stats()[STAT_STRENGTH] / 4)),
+		Evasion:      uint16(p.BaseCharStats().Stats()[STAT_AGILITY] / 2),
+		Defense:      uint16(p.BaseCharStats().Stats()[STAT_CONSTITUTION] / 2),
+		MagicAttack:  uint16(p.BaseCharStats().Stats()[STAT_WISDOM]),
+		MagicDamage:  uint16(p.BaseCharStats().Stats()[STAT_INTELLIGENCE]),
+		MagicEvasion: uint16(3 * (p.BaseCharStats().Stats()[STAT_WISDOM] / 4)),
+		MagicDefense: uint16(3 * (p.BaseCharStats().Stats()[STAT_INTELLIGENCE] / 4)),
 		Level:        1 + uint8(p.Experience/1000),
 	}
-	p.BasePhyStats = &baseStats
-	p.CurPhyStats = baseStats.copyOf()
+	p.basePhyStats = &baseStats
+	p.curPhyStats = baseStats.copyOf()
 
 	baseState := CharState{
-		Hits:     uint16((baseStats.Level * 30) + (p.BaseCharStats.Stats()[STAT_CONSTITUTION] / 10.0)),
-		Fat:      uint16((baseStats.Level * 30) + (p.BaseCharStats.Stats()[STAT_CONSTITUTION] / 10.0)),
-		Power:    uint16((baseStats.Level * 20) + (p.BaseCharStats.Stats()[STAT_INTELLIGENCE] / 10.0)),
+		Hits:     uint16((baseStats.Level * 30) + (p.BaseCharStats().Stats()[STAT_CONSTITUTION] / 10.0)),
+		Fat:      uint16((baseStats.Level * 30) + (p.BaseCharStats().Stats()[STAT_CONSTITUTION] / 10.0)),
+		Power:    uint16((baseStats.Level * 20) + (p.BaseCharStats().Stats()[STAT_INTELLIGENCE] / 10.0)),
 		Alive:    true,
 		Standing: true,
 		Sitting:  false,
 		Laying:   false,
 	}
-	p.MaxState = &baseState
-	p.CurState = baseState.copyOf()
+	p.maxState = &baseState
+	p.curState = baseState.copyOf()
 
 	// should only be stop on new players
 	if p.tickType == TickStop {
@@ -309,7 +252,7 @@ func (p *Player) Walk(dest *Room, verb string) {
 	p.Room().RemoveMOB(p)
 	dest.AddMOB(p)
 	dest.ShowRoom(p)
-	p.adjFat(-2, p.maxState().fat())
+	p.CurState().adjFat(-2, p.MaxState().fat())
 	p.Room().ShowOthers(p, nil, fmt.Sprintf("%s just came in.", p.Name()))
 }
 
@@ -319,7 +262,7 @@ func (p *Player) WalkThrough(port *Portal) {
 	p.Room().RemoveMOB(p)
 	port.DestRoom().AddMOB(p)
 	port.DestRoom().ShowRoom(p)
-	p.adjFat(-2, p.maxState().fat())
+	p.CurState().adjFat(-2, p.MaxState().fat())
 	p.Room().ShowOthers(p, nil, fmt.Sprintf("%s just came in.", p.Name()))
 }
 
@@ -331,21 +274,21 @@ func (p *Player) SetRoom(newRoom *Room) {
 	p.room = newRoom
 }
 
-func (p *Player) attackTarget(target MOB) {
+func (p *Player) AttackTarget(target MOB) {
 	if target == nil {
 		p.SendMessage("You must specify a target.", true)
 	}
 
-	if !p.curState().alive() {
+	if !p.CurState().alive() {
 		p.SendMessage("You must be alive to do that!", true)
 		return
-	} else if !target.curState().alive() {
+	} else if !target.CurState().alive() {
 		p.SendMessage(fmt.Sprintf("%s is already dead!", target.Name()), true)
 		return
 	}
 
-	damage := int(p.curPhyStats().damage()) - int(target.curPhyStats().defense())
-	chance := int(p.curPhyStats().attack()) - int(target.curPhyStats().evasion())
+	damage := int(p.CurPhyStats().damage()) - int(target.CurPhyStats().defense())
+	chance := int(p.CurPhyStats().attack()) - int(target.CurPhyStats().evasion())
 
 	if damage < 0 {
 		damage = 0
@@ -360,15 +303,15 @@ func (p *Player) attackTarget(target MOB) {
 		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  You are hit for %s damage.",
 			p.Name(), CDamageIn(damage)), true)
 
-		target.damageMOB(p, uint16(damage))
+		target.DamageMOB(p, uint16(damage))
 	} else {
 		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name()), true)
 		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  They miss!", p.Name()), true)
 	}
 }
 
-func (p *Player) killMOB(killer MOB) {
-	p.curState().setAlive(false)
+func (p *Player) KillMOB(killer MOB) {
+	p.CurState().setAlive(false)
 	p.SetVictim(nil)
 	killer.SetVictim(nil)
 
@@ -377,7 +320,7 @@ func (p *Player) killMOB(killer MOB) {
 	p.Room().ShowOthers(p, killer, fmt.Sprintf("%s was just killed by %s!", p.Name(), killer.Name()))
 	// drop held items
 	// handle RP
-	rpAward := uint32(p.curPhyStats().level() - (killer.curPhyStats().level() - p.curPhyStats().level()))
+	rpAward := uint32(p.CurPhyStats().level() - (killer.CurPhyStats().level() - p.CurPhyStats().level()))
 	plural := "point"
 	if rpAward != 1 {
 		plural = "points"
@@ -388,13 +331,13 @@ func (p *Player) killMOB(killer MOB) {
 
 }
 
-func (p *Player) damageMOB(attacker MOB, dmg uint16) {
-	if (p.curState().hits() == 0) && (dmg > 0) {
-		p.killMOB(attacker)
+func (p *Player) DamageMOB(attacker MOB, dmg uint16) {
+	if (p.CurState().hits() == 0) && (dmg > 0) {
+		p.KillMOB(attacker)
 		return
 	}
-	p.adjHits(int16(-dmg), p.maxState().hits())
-	if p.curState().hits() == 0 {
+	p.CurState().adjHits(int16(-dmg), p.MaxState().hits())
+	if p.CurState().hits() == 0 {
 		p.SendMessage("You are almost dead!", true)
 	}
 
@@ -419,8 +362,8 @@ func (p *Player) AwardExp(howMuch uint64) {
 		if newLevel > 75 {
 			return
 		}
-		p.basePhyStats().setLevel(newLevel)
-		p.recoverPhyStats()
+		p.BasePhyStats().setLevel(newLevel)
+		p.RecoverPhyStats()
 		p.SendMessage(fmt.Sprintf("You raise a level!\r\n  Your new level is %s.",
 			CHighlight(newLevel)), true)
 	}
@@ -437,8 +380,8 @@ func (p *Player) AwardRP(howMuch uint32) {
 }
 
 func (p *Player) releaseCorpse(w *World) {
-	p.recoverCharState()
-	p.recoverPhyStats()
+	p.RecoverCharState()
+	p.RecoverPhyStats()
 	target := w.GetRoomById("A")
 	if target != nil {
 		p.SendMessage("You release your corpse!", true)
@@ -489,23 +432,23 @@ func (p *Player) SavePlayerToDBQuery() (string, error) {
 	player := PlayerDB{
 		name:       p.Name(),
 		account:    p.Account,
-		class:      p.baseCharStats().CurrentClass().Name(),
-		race:       p.baseCharStats().Race().Name(),
+		class:      p.BaseCharStats().CurrentClass().Name(),
+		race:       p.BaseCharStats().Race().Name(),
 		room:       location,
 		coins:      p.Coins(),
-		stre:       p.baseCharStats().Stat(STAT_STRENGTH),
-		cons:       p.baseCharStats().Stat(STAT_CONSTITUTION),
-		agil:       p.baseCharStats().Stat(STAT_AGILITY),
-		dext:       p.baseCharStats().Stat(STAT_DEXTERITY),
-		inte:       p.baseCharStats().Stat(STAT_INTELLIGENCE),
-		wisd:       p.baseCharStats().Stat(STAT_WISDOM),
+		stre:       p.BaseCharStats().Stat(STAT_STRENGTH),
+		cons:       p.BaseCharStats().Stat(STAT_CONSTITUTION),
+		agil:       p.BaseCharStats().Stat(STAT_AGILITY),
+		dext:       p.BaseCharStats().Stat(STAT_DEXTERITY),
+		inte:       p.BaseCharStats().Stat(STAT_INTELLIGENCE),
+		wisd:       p.BaseCharStats().Stat(STAT_WISDOM),
 		con_loss:   0,
-		level:      p.basePhyStats().level(),
+		level:      p.BasePhyStats().level(),
 		exp:        p.Experience,
 		rp:         p.RealmPoints,
-		hits:       p.maxState().hits(),
-		fat:        p.maxState().fat(),
-		power:      p.maxState().power(),
+		hits:       p.MaxState().hits(),
+		fat:        p.MaxState().fat(),
+		power:      p.MaxState().power(),
 		trains:     0,
 		guild:      "",
 		guild_rank: 0,

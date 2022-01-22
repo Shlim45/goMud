@@ -218,7 +218,7 @@ func (r *Room) ShowRoom(player MOB) {
 		output.WriteString("\r\n")
 		for _, other := range r.Mobs {
 			if other != player {
-				if other.isPlayer() {
+				if other.IsPlayer() {
 					output.WriteString(CFriend(other.Name()))
 				} else {
 					output.WriteString(CEnemy(other.Name()))

@@ -78,3 +78,36 @@ func (cState *CharState) laying() bool {
 func (cState *CharState) setLaying(isLaying bool) {
 	cState.Laying = isLaying
 }
+
+func (cState *CharState) adjHits(amount int16, max uint16) {
+	newHits := int32(cState.hits()) + int32(amount)
+	if newHits < 0 {
+		cState.setHits(0)
+	} else if newHits > int32(max) {
+		cState.setHits(max)
+	} else {
+		cState.setHits(uint16(newHits))
+	}
+}
+
+func (cState *CharState) adjFat(amount int16, max uint16) {
+	newFat := int32(cState.fat()) + int32(amount)
+	if newFat < 0 {
+		cState.setFat(0)
+	} else if newFat > int32(max) {
+		cState.setFat(max)
+	} else {
+		cState.setFat(uint16(newFat))
+	}
+}
+
+func (cState *CharState) adjPower(amount int16, max uint16) {
+	newPower := int32(cState.power()) + int32(amount)
+	if newPower < 0 {
+		cState.setPower(0)
+	} else if newPower > int32(max) {
+		cState.setPower(max)
+	} else {
+		cState.setPower(uint16(newPower))
+	}
+}

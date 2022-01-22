@@ -55,6 +55,7 @@ func (w *World) HandleCharacterJoined(character *Player) {
 		w.rooms[0].AddMOB(character)
 	}
 
+	go character.Tick(TickPlayer)
 	character.Room().ShowRoom(character)
 	character.Room().ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name()))
 
@@ -62,6 +63,7 @@ func (w *World) HandleCharacterJoined(character *Player) {
 }
 
 func (w *World) RemoveFromWorld(character *Player) {
+	character.Tick(TickStop)
 	room := character.Room()
 	if room != nil {
 		room.RemoveMOB(character)
@@ -103,7 +105,6 @@ func (w *World) MoveMob(mob MOB, to *Room) {
 	mob.Room().RemoveMOB(mob)
 	to.AddMOB(mob)
 	to.ShowRoom(mob)
-	mob.adjFat(-2, mob.maxState().fat())
 }
 
 func (w *World) FindUserAccount(uName string) (*Account, error) {
@@ -170,7 +171,7 @@ func (w *World) HandleUserLogin(user *User, input string) {
 				chars.WriteString("\r\n")
 				for _, mob := range user.Account.characters {
 					chars.WriteString(fmt.Sprintf("%-20v lvl %d %s\r\n",
-						BrightBlue(mob.Name()), mob.curPhyStats().level(), mob.curCharStats().CurrentClass().Name()))
+						BrightBlue(mob.Name()), mob.CurPhyStats().level(), mob.CurCharStats().CurrentClass().Name()))
 				}
 				chars.WriteString("\r\nEnter Character Name: ")
 				session.WriteLine(chars.String())
@@ -202,7 +203,7 @@ func (w *World) HandleUserLogin(user *User, input string) {
 		var chars strings.Builder
 		for name, mob := range user.Account.characters {
 			chars.WriteString(fmt.Sprintf("%-15v lvl %d %s\r\n",
-				CHighlight(mob.Name()), mob.curPhyStats().level(), mob.curCharStats().CurrentClass().Name()))
+				CHighlight(mob.Name()), mob.CurPhyStats().level(), mob.CurCharStats().CurrentClass().Name()))
 			if strings.Compare(strings.ToLower(input), strings.ToLower(name)) == 0 {
 				user.Character = mob
 				mob.User = user
@@ -244,7 +245,7 @@ func (w *World) HandlePlayerInput(player *Player, input string, library *MudLib)
 
 	for _, link := range player.Room().Links {
 		if link.Verb == tokens[0] || strings.HasPrefix(link.Verb, tokens[0]) {
-			if player.curState().fat() < 2 {
+			if player.CurState().fat() < 2 {
 				player.SendMessage("You are too tired!", true)
 				return
 			}

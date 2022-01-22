@@ -95,7 +95,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 			tickType: TickStop,
 		}
 		monster.Init(library)
-		monster.basePhyStats().setLevel(5)
+		monster.BasePhyStats().setLevel(5)
 		m.Room().AddMOB(monster)
 		m.Room().Show(m, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
 		success = true
@@ -103,32 +103,32 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 	case "stats":
 		var output strings.Builder
 
-		attack := fmt.Sprintf("Attack:    %d/%d", m.curPhyStats().attack(), m.basePhyStats().attack())
+		attack := fmt.Sprintf("Attack:    %d/%d", m.CurPhyStats().attack(), m.BasePhyStats().attack())
 		attack = fmt.Sprintf("%-25v", attack)
 		output.WriteString(attack)
 
-		mAttack := fmt.Sprintf("Magic Attack:    %d/%d\r\n", m.curPhyStats().magicAttack(), m.basePhyStats().magicAttack())
+		mAttack := fmt.Sprintf("Magic Attack:    %d/%d\r\n", m.CurPhyStats().magicAttack(), m.BasePhyStats().magicAttack())
 		output.WriteString(mAttack)
 
-		damage := fmt.Sprintf("Damage:    %d/%d", m.curPhyStats().damage(), m.basePhyStats().damage())
+		damage := fmt.Sprintf("Damage:    %d/%d", m.CurPhyStats().damage(), m.BasePhyStats().damage())
 		damage = fmt.Sprintf("%-25v", damage)
 		output.WriteString(damage)
 
-		mDamage := fmt.Sprintf("Magic Damage:    %d/%d\r\n", m.curPhyStats().magicDamage(), m.basePhyStats().magicDamage())
+		mDamage := fmt.Sprintf("Magic Damage:    %d/%d\r\n", m.CurPhyStats().magicDamage(), m.BasePhyStats().magicDamage())
 		output.WriteString(mDamage)
 
-		evasion := fmt.Sprintf("Evasion:   %d/%d", m.curPhyStats().evasion(), m.basePhyStats().evasion())
+		evasion := fmt.Sprintf("Evasion:   %d/%d", m.CurPhyStats().evasion(), m.BasePhyStats().evasion())
 		evasion = fmt.Sprintf("%-25v", evasion)
 		output.WriteString(evasion)
 
-		mEvasion := fmt.Sprintf("Magic Evasion:   %d/%d\r\n", m.curPhyStats().magicEvasion(), m.basePhyStats().magicEvasion())
+		mEvasion := fmt.Sprintf("Magic Evasion:   %d/%d\r\n", m.CurPhyStats().magicEvasion(), m.BasePhyStats().magicEvasion())
 		output.WriteString(mEvasion)
 
-		defense := fmt.Sprintf("Defense:   %d/%d", m.curPhyStats().defense(), m.basePhyStats().defense())
+		defense := fmt.Sprintf("Defense:   %d/%d", m.CurPhyStats().defense(), m.BasePhyStats().defense())
 		defense = fmt.Sprintf("%-25v", defense)
 		output.WriteString(defense)
 
-		mDefense := fmt.Sprintf("Magic Defense:   %d/%d\r\n", m.curPhyStats().magicDefense(), m.basePhyStats().magicDefense())
+		mDefense := fmt.Sprintf("Magic Defense:   %d/%d\r\n", m.CurPhyStats().magicDefense(), m.BasePhyStats().magicDefense())
 		output.WriteString(mDefense)
 
 		m.SendMessage(output.String(), true)
@@ -136,13 +136,13 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 
 	case "health":
 		m.SendMessage(fmt.Sprintf("   Hits: %d/%d     Fat: %d/%d     Pow: %d/%d",
-			m.curState().Hits, m.maxState().Hits,
-			m.curState().Fat, m.maxState().Fat,
-			m.curState().Power, m.maxState().Power), true)
+			m.CurState().Hits, m.MaxState().Hits,
+			m.CurState().Fat, m.MaxState().Fat,
+			m.CurState().Power, m.MaxState().Power), true)
 		success = true
 
 	case "release":
-		if m.curState().Alive {
+		if m.CurState().Alive {
 			m.SendMessage("You must be dead to release your corpse.", true)
 			return success
 		}
@@ -153,7 +153,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 		if len(input) > 1 {
 			target := room.FetchInhabitant(input[len(input)-1])
 			if target != nil {
-				m.attackTarget(target)
+				m.AttackTarget(target)
 				success = true
 			} else {
 				m.SendMessage("You don't see them here.", true)
@@ -165,7 +165,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 					m.SendMessage("You don't see them here.", true)
 					return success
 				}
-				m.attackTarget(target)
+				m.AttackTarget(target)
 				success = true
 			} else {
 				m.SendMessage("Hit who?  You must specify a target.", true)
@@ -179,10 +179,10 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 		name = fmt.Sprintf("%-40v", name)
 		output.WriteString(name)
 
-		pClass := fmt.Sprintf("Class:    %s\r\n", m.curCharStats().CurrentClass().Name())
+		pClass := fmt.Sprintf("Class:    %s\r\n", m.CurCharStats().CurrentClass().Name())
 		output.WriteString(pClass)
 
-		level := fmt.Sprintf("Level:    %d", m.curPhyStats().level())
+		level := fmt.Sprintf("Level:    %d", m.CurPhyStats().level())
 		level = fmt.Sprintf("%-40v", level)
 		output.WriteString(level)
 
@@ -205,8 +205,8 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 		output.WriteString(Yellow("\r\n                  Score   Bonus\r\n"))
 		output.WriteString("                  -----   -----\r\n")
 
-		for stat, value := range m.curCharStats().Stats() {
-			bonus := m.curCharStats().StatBonus(uint8(stat))
+		for stat, value := range m.CurCharStats().Stats() {
+			bonus := m.CurCharStats().StatBonus(uint8(stat))
 			output.WriteString(fmt.Sprintf("%-18v%2v (%2v%%)\r\n",
 				StatToString(uint8(stat))+":", value, bonus))
 		}
@@ -499,7 +499,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 			return success
 		}
 
-		if m.curState().fat() < 2 {
+		if m.CurState().fat() < 2 {
 			m.SendMessage("You are too tired!", true)
 			return success
 		}
@@ -545,7 +545,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 	if success {
 		// handle timer and usage cost
 		if c.CostType() == CostFat {
-			m.adjFat(-c.UseCost(), m.maxState().fat())
+			m.CurState().adjFat(-c.UseCost(), m.MaxState().fat())
 		}
 	}
 	return success
