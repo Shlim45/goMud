@@ -69,21 +69,37 @@ func (R Realm) God() string {
 	}
 }
 
-type Mob interface {
+type MudMob interface {
 	Name() string
 	SetName(newName string)
 	basePhyStats() *PhyStats
 	curPhyStats() *PhyStats
 	recoverPhyStats()
 	curState() *CharState
+	maxState() *CharState
 	adjHits(amount uint16)
 	adjFat(amount uint16)
 	adjPower(amount uint16)
-	maxState() *CharState
 	adjMaxHits(amount uint16)
 	adjMaxFat(amount uint16)
 	adjMaxPower(amount uint16)
 	recoverCharState()
+	curCharStats() *CharStats
+	baseCharStats() *CharStats
+	recoverCharStats()
 	level()
 	setLevel(newLevel uint8)
+	isPlayer() bool
+	Inventory() []*Item
+	AddItem(item *Item)
+	RemoveItem(item *Item)
+	MoveItemTo(item *Item)
+	AttackVictim()
+	Tick(tType TickType) bool
+	Init(library *MudLib)
+	Walk(dest *Room, verb string)
+	WalkThrough(port *Portal)
+	attackTarget(target *MOB)
+	killMOB(killer *MOB)
+	damageMOB(attacker *MOB, dmg uint16)
 }

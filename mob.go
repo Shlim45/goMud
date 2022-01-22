@@ -37,6 +37,7 @@ func (m *MOB) Inventory() []*Item {
 	return m.inventory
 }
 
+// TODO(jon): Player only
 func (m *MOB) ShowInventory() {
 	var inv strings.Builder
 	inv.WriteString("You are currently carrying:")
@@ -224,6 +225,7 @@ func (m *MOB) Init(library *MudLib) {
 	}
 }
 
+// TODO(jon): Player only
 func (m *MOB) SendMessage(msg string, newLine bool) {
 	if !m.isPlayer() {
 		return
@@ -384,6 +386,7 @@ func (m *MOB) attackTarget(target *MOB) {
 	}
 }
 
+// TODO(jon): Player only
 func (m *MOB) AwardExp(howMuch uint64) {
 	old := m.Experience
 	tnl := 1000 - (old % 1000)
@@ -400,6 +403,7 @@ func (m *MOB) AwardExp(howMuch uint64) {
 	}
 }
 
+// TODO(jon): Player only
 func (m *MOB) AwardRP(howMuch uint32) {
 	old := m.RealmPoints
 	tnr := 100 - (old % 100)
@@ -458,6 +462,7 @@ func (m *MOB) damageMOB(attacker *MOB, dmg uint16) {
 	m.Victim = attacker
 }
 
+// TODO(jon): Player only
 func (m *MOB) releaseCorpse(w *World) {
 	m.recoverCharState()
 	m.recoverPhyStats()
@@ -539,35 +544,4 @@ func (m *MOB) SavePlayerToDBQuery() (string, error) {
 			player.name, player.account, player.class, player.race, player.room, player.coins, player.stre, player.cons, player.agil, player.dext, player.inte, player.wisd,
 			player.con_loss, player.level, player.exp, player.rp, player.hits, player.fat, player.power, player.trains, player.guild, player.guild_rank, player.last_date),
 		nil // the error
-}
-
-func CreatePlayerTableDBQuery() string {
-	return "CREATE TABLE IF NOT EXISTS Player(" +
-		"name VARCHAR(20) PRIMARY KEY," +
-		"account VARCHAR(20)," +
-		"class VARCHAR(20)," +
-		"race VARCHAR(20)," +
-		"room VARCHAR(60)," +
-		"coins BIGINT UNSIGNED NOT NULL," +
-		"stre TINYINT UNSIGNED NOT NULL," +
-		"cons TINYINT UNSIGNED NOT NULL," +
-		"agil TINYINT UNSIGNED NOT NULL," +
-		"dext TINYINT UNSIGNED NOT NULL," +
-		"inte TINYINT UNSIGNED NOT NULL," +
-		"wisd TINYINT UNSIGNED NOT NULL," +
-		"con_loss TINYINT UNSIGNED NOT NULL," +
-		"level TINYINT UNSIGNED NOT NULL," +
-		"exp BIGINT UNSIGNED NOT NULL," +
-		"rp INT UNSIGNED NOT NULL," +
-		"hits SMALLINT UNSIGNED NOT NULL," +
-		"fat SMALLINT UNSIGNED NOT NULL," +
-		"power SMALLINT UNSIGNED NOT NULL," +
-		"trains SMALLINT UNSIGNED NOT NULL DEFAULT 0," +
-		"guild VARCHAR(30)," + // FK
-		"guild_rank TINYINT UNSIGNED NOT NULL DEFAULT 0," +
-		"last_date TIMESTAMP," +
-		"FOREIGN KEY (account) REFERENCES Account(username) ON UPDATE CASCADE ON DELETE SET NULL," +
-		"FOREIGN KEY (class) REFERENCES CharClass(name) ON UPDATE CASCADE ON DELETE SET NULL," +
-		"FOREIGN KEY (race) REFERENCES Race(name) ON UPDATE CASCADE ON DELETE SET NULL" +
-		")"
 }
