@@ -121,7 +121,7 @@ func (r *Room) RemoveItem(item *Item) {
 
 func (r *Room) MoveItemTo(item *Item) {
 	if item.Owner() != nil {
-		(*item.Owner()).RemoveItem(item)
+		item.Owner().RemoveItem(item)
 		item.SetOwner(nil)
 	}
 

@@ -2,14 +2,15 @@ package main
 
 import "fmt"
 
-//type MudItem interface {
-//	Owner() *ItemPossessor
-//	SetOwner(newOwner *ItemPossessor)
-//	Article() string
-//	SetArticle(newArt string)
-//	Keyword() string
-//	SetKeyword(newKey string)
-//}
+type MudItem interface {
+	Owner() ItemPossessor
+	SetOwner(newOwner ItemPossessor)
+	Article() string
+	SetArticle(newArt string)
+	Keyword() string
+	SetKeyword(newKey string)
+	FullName() string
+}
 
 type ItemPossessor interface {
 	AddItem(item *Item)
@@ -30,7 +31,7 @@ type Item struct {
 	keyword  string
 	article  string
 	name     string
-	owner    *ItemPossessor
+	owner    ItemPossessor
 	value    uint64
 	itemType ItemType
 }
@@ -51,12 +52,12 @@ func (item *Item) SetItemType(newType ItemType) {
 	item.itemType = newType
 }
 
-func (item *Item) Owner() *ItemPossessor {
+func (item *Item) Owner() ItemPossessor {
 	return item.owner
 }
 
 func (item *Item) SetOwner(newOwner ItemPossessor) {
-	item.owner = &newOwner
+	item.owner = newOwner
 }
 
 func (item *Item) FullName() string {

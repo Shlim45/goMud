@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 )
 
 type Session struct {
@@ -100,32 +99,7 @@ func (h *SessionHandler) Start() {
 
 			h.users[sid] = user
 
-			var logo strings.Builder
-			logo.WriteString("\r\n\r\n")
-			logo.WriteString("          _____                    _____                    _____\r\n")
-			logo.WriteString("         /\\    \\                  /\\    \\                  /\\    \\ \r\n")
-			logo.WriteString("        /::\\    \\                /::\\    \\                /::\\    \\ \r\n")
-			logo.WriteString("       /::::\\    \\              /::::\\    \\              /::::\\    \\ \r\n")
-			logo.WriteString("      /::::::\\    \\            /::::::\\    \\            /::::::\\    \\ \r\n")
-			logo.WriteString("     /:::/\\:::\\    \\          /:::/\\:::\\    \\          /:::/\\:::\\    \\ \r\n")
-			logo.WriteString("    /:::/  \\:::\\    \\        /:::/__\\:::\\    \\        /:::/  \\:::\\    \\ \r\n")
-			logo.WriteString("   /:::/    \\:::\\    \\      /::::\\   \\:::\\    \\      /:::/    \\:::\\    \\ \r\n")
-			logo.WriteString("  /:::/    / \\:::\\    \\    /::::::\\   \\:::\\    \\    /:::/    / \\:::\\    \\ \r\n")
-			logo.WriteString(" /:::/    /   \\:::\\ ___\\  /:::/\\:::\\   \\:::\\    \\  /:::/    /   \\:::\\    \\ \r\n")
-			logo.WriteString("/:::/____/     \\:::|    |/:::/  \\:::\\   \\:::\\____\\/:::/____/     \\:::\\____\\ \r\n")
-			logo.WriteString("\\:::\\    \\     /:::|____|\\::/    \\:::\\   \\::/    /\\:::\\    \\      \\::/    /\r\n")
-			logo.WriteString(" \\:::\\    \\   /:::/    /  \\/____/ \\:::\\   \\/____/  \\:::\\    \\      \\/____/\r\n")
-			logo.WriteString("  \\:::\\    \\ /:::/    /            \\:::\\    \\       \\:::\\    \\ \r\n")
-			logo.WriteString("   \\:::\\    /:::/    /              \\:::\\____\\       \\:::\\    \\ \r\n")
-			logo.WriteString("    \\:::\\  /:::/    /                \\::/    /        \\:::\\    \\ \r\n")
-			logo.WriteString("     \\:::\\/:::/    /                  \\/____/          \\:::\\    \\ \r\n")
-			logo.WriteString("      \\::::::/    /                                     \\:::\\    \\ \r\n")
-			logo.WriteString("       \\::::/    /                                       \\:::\\____\\ \r\n")
-			logo.WriteString("        \\::/____/                                         \\::/    /\r\n")
-			logo.WriteString("         ¯¯                                                \\/____/\r\n")
-			logo.WriteString("\r\n\r\n")
-
-			session.WriteLine(logo.String())
+			session.WriteLine(MudASCIILogo())
 			session.WriteLine("Welcome to Darkness Falls.\r\n")
 			session.WriteLine("\r\nUsername: ")
 			session.SetStatus(USERNAME)

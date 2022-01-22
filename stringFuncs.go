@@ -33,3 +33,31 @@ func after(value string, a string) string {
 func TimeString(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05.999999")
 }
+
+func MudASCIILogo() string {
+	var logo strings.Builder
+	logo.WriteString("\r\n\r\n")
+	logo.WriteString("          _____                    _____                    _____\r\n")
+	logo.WriteString("         /\\    \\                  /\\    \\                  /\\    \\ \r\n")
+	logo.WriteString("        /::\\    \\                /::\\    \\                /::\\    \\ \r\n")
+	logo.WriteString("       /::::\\    \\              /::::\\    \\              /::::\\    \\ \r\n")
+	logo.WriteString("      /::::::\\    \\            /::::::\\    \\            /::::::\\    \\ \r\n")
+	logo.WriteString("     /:::/\\:::\\    \\          /:::/\\:::\\    \\          /:::/\\:::\\    \\ \r\n")
+	logo.WriteString("    /:::/  \\:::\\    \\        /:::/__\\:::\\    \\        /:::/  \\:::\\    \\ \r\n")
+	logo.WriteString("   /:::/    \\:::\\    \\      /::::\\   \\:::\\    \\      /:::/    \\:::\\    \\ \r\n")
+	logo.WriteString("  /:::/    / \\:::\\    \\    /::::::\\   \\:::\\    \\    /:::/    / \\:::\\    \\ \r\n")
+	logo.WriteString(" /:::/    /   \\:::\\ ___\\  /:::/\\:::\\   \\:::\\    \\  /:::/    /   \\:::\\    \\ \r\n")
+	logo.WriteString("/:::/____/     \\:::|    |/:::/  \\:::\\   \\:::\\____\\/:::/____/     \\:::\\____\\ \r\n")
+	logo.WriteString("\\:::\\    \\     /:::|____|\\::/    \\:::\\   \\::/    /\\:::\\    \\      \\::/    /\r\n")
+	logo.WriteString(" \\:::\\    \\   /:::/    /  \\/____/ \\:::\\   \\/____/  \\:::\\    \\      \\/____/\r\n")
+	logo.WriteString("  \\:::\\    \\ /:::/    /            \\:::\\    \\       \\:::\\    \\ \r\n")
+	logo.WriteString("   \\:::\\    /:::/    /              \\:::\\____\\       \\:::\\    \\ \r\n")
+	logo.WriteString("    \\:::\\  /:::/    /                \\::/    /        \\:::\\    \\ \r\n")
+	logo.WriteString("     \\:::\\/:::/    /                  \\/____/          \\:::\\    \\ \r\n")
+	logo.WriteString("      \\::::::/    /                                     \\:::\\    \\ \r\n")
+	logo.WriteString("       \\::::/    /                                       \\:::\\____\\ \r\n")
+	logo.WriteString("        \\::/____/                                         \\::/    /\r\n")
+	logo.WriteString("         ¯¯                                                \\/____/\r\n")
+	logo.WriteString("\r\n\r\n")
+	return Green(logo.String())
+}

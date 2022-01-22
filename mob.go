@@ -69,7 +69,7 @@ func (m *MOB) RemoveItem(item *Item) {
 
 func (m *MOB) MoveItemTo(item *Item) {
 	if item.Owner() != nil {
-		(*item.Owner()).RemoveItem(item)
+		item.Owner().RemoveItem(item)
 		item.SetOwner(nil)
 	}
 
