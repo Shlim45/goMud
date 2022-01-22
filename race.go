@@ -59,6 +59,6 @@ func (r *PlayerRace) StatBonuses() *[NUM_STATS]float64 {
 }
 
 func (r *PlayerRace) SaveRaceToDBQuery() string {
-	return fmt.Sprintf("INSERT INTO Race VALUES ('%s', %v)",
+	return fmt.Sprintf("INSERT INTO Race VALUES ('%s', %v) AS new ON DUPLICATE KEY UPDATE name=new.name, enabled=new.enabled",
 		r.Name(), r.Enabled())
 }

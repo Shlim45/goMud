@@ -61,6 +61,6 @@ func (pc *PlayerClass) StatBonuses() *[NUM_STATS]float64 {
 }
 
 func (pc *PlayerClass) SaveCharClassToDBQuery() string {
-	return fmt.Sprintf("INSERT INTO CharClass VALUES ('%s', %d, %v)",
+	return fmt.Sprintf("INSERT INTO CharClass VALUES ('%s', %d, %v) AS new ON DUPLICATE KEY UPDATE name=new.name, realm=new.realm, enabled=new.enabled",
 		pc.Name(), uint8(pc.Realm()), pc.Enabled())
 }

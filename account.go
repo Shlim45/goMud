@@ -95,6 +95,7 @@ func (a *Account) SetEmail(newEmail string) {
 
 func (a *Account) SaveAccountToDBQuery() string {
 	lastDate := TimeString(a.LastDate())
-	return fmt.Sprintf("INSERT INTO Account VALUES ('%s', '%s', %d, '%s', '%s', '%s')",
+	return fmt.Sprintf("INSERT INTO Account VALUES ('%s', '%s', %d, '%s', '%s', '%s') AS new ON DUPLICATE KEY UPDATE "+
+		"username=new.username, password=new.password, max_chars=new.max_chars, last_ip=new.last_ip, last_date=new.last_date, email=new.email",
 		a.UserName(), a.PasswordHash(), a.MaxChars(), a.LastIP(), lastDate, a.Email())
 }

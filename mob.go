@@ -10,6 +10,7 @@ import (
 
 type MOB struct {
 	name          string `json:"name"`
+	Account       string `json:"account"`
 	User          *User
 	Room          *Room
 	CurState      *CharState
@@ -488,7 +489,7 @@ func (m *MOB) SavePlayerToDBQuery() (string, error) {
 	}
 	player := PlayerDB{
 		name:       m.Name(),
-		account:    m.User.Account.UserName(),
+		account:    m.Account,
 		class:      m.baseCharStats().CurrentClass().Name(),
 		race:       m.baseCharStats().Race().Name(),
 		room:       location,
@@ -511,7 +512,9 @@ func (m *MOB) SavePlayerToDBQuery() (string, error) {
 		guild_rank: 0,
 		last_date:  TimeString(time.Now()),
 	}
-	return fmt.Sprintf("INSERT INTO Player VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, '%s', %d, '%s')",
+	return fmt.Sprintf("INSERT INTO Player VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, '%s', %d, '%s')"+
+			" AS new ON DUPLICATE KEY UPDATE name=new.name, account=new.account, class=new.class, race=new.race, room=new.room, coins=new.coins, stre=new.stre, cons=new.cons, agil=new.agil, dext=new.dext, inte=new.inte, wisd=new.wisd, "+
+			"con_loss=new.con_loss, level=new.level, exp=new.exp, rp=new.rp, hits=new.hits, fat=new.fat, power=new.power, trains=new.trains, guild=new.guild, guild_rank=new.guild_rank, last_date=new.last_date",
 			player.name, player.account, player.class, player.race, player.room, player.coins, player.stre, player.cons, player.agil, player.dext, player.inte, player.wisd,
 			player.con_loss, player.level, player.exp, player.rp, player.hits, player.fat, player.power, player.trains, player.guild, player.guild_rank, player.last_date),
 		nil // the error

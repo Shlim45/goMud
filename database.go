@@ -296,6 +296,7 @@ func (db *DatabaseConnection) LoadPlayers(w *World, lib *MudLib) {
 
 		newPlayer := MOB{
 			name:          pTag.name,
+			Account:       pTag.account,
 			User:          nil,
 			Room:          w.GetRoomById(pTag.room),
 			CurState:      maxCState.copyOf(),
@@ -392,6 +393,9 @@ func (db *DatabaseConnection) LoadRooms(w *World) {
 			Mobs:    nil,
 		}
 		w.rooms = append(w.rooms, &newRoom)
+		if area := newRoom.Area; area != nil {
+			area.Rooms = append(area.Rooms, &newRoom)
+		}
 		count++
 	}
 

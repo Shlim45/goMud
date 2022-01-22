@@ -255,6 +255,13 @@ func (r *Room) SaveRoomToDBQuery() string {
 		links[VerbToDirection(link.Verb)] = link.RoomId
 	}
 
-	return fmt.Sprintf("INSERT INTO Room VALUES ('%s', '%s', '%s', '%s')",
-		r.Id, "Darkness Falls", r.Desc, strings.Join(links, ";"))
+	roomTag := RoomTag{
+		ID:    r.Id,
+		Area:  r.Area.Name,
+		Desc:  r.Desc,
+		Links: strings.Join(links, ";"),
+	}
+
+	return fmt.Sprintf("INSERT INTO Room VALUES ('%s', '%s', '%s', '%s') AS new ON DUPLICATE KEY UPDATE room_id=new.room_id, area=new.area, description=new.description, links=new.links",
+		roomTag.ID, roomTag.Area, roomTag.Desc, roomTag.Links)
 }

@@ -105,10 +105,13 @@ func (w *World) Init() {
 */
 
 func (w *World) HandleCharacterJoined(character *MOB) {
-	//w.characters[character.Name()] = character
-	w.rooms[0].AddMOB(character)
+	room := character.Room
+	if room != nil {
+		room.AddMOB(character)
+	} else {
+		w.rooms[0].AddMOB(character)
+	}
 
-	//character.SendMessage("Welcome to Darkness Falls\n\r", true)
 	character.Room.ShowRoom(character)
 	character.Room.ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name()))
 
@@ -127,13 +130,43 @@ func (w *World) RemoveFromWorld(character *MOB) {
 
 func (w *World) Broadcast(msg string) {
 	for _, player := range w.characters {
-		if player.User.Session.Status() == INGAME {
+		if player.User != nil && player.User.Session.Status() == INGAME {
 			player.SendMessage(msg, true)
 		}
 	}
 }
 
+func before(value string, a string) string {
+	// Get substring before a string.
+	pos := strings.Index(value, a)
+	if pos == -1 {
+		return ""
+	}
+	return value[0:pos]
+}
+
+func after(value string, a string) string {
+	// Get substring after a string.
+	pos := strings.LastIndex(value, a)
+	if pos == -1 {
+		return ""
+	}
+	adjustedPos := pos + len(a)
+	if adjustedPos >= len(value) {
+		return ""
+	}
+	return value[adjustedPos:len(value)]
+}
+
 func (w *World) GetRoomById(id string) *Room {
+	if strings.Contains(id, "#") {
+		areaName := before(id, "#")
+		roomId := after(id, "#")
+		area := w.areas[areaName]
+		if area != nil {
+			return area.GetRoomById(roomId)
+		}
+	}
 	for _, r := range w.rooms {
 		if r.Id == id {
 			return r

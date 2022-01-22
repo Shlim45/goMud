@@ -4,7 +4,6 @@ import "log"
 
 func SaveAndShutdownServer(world *World, library *MudLib) {
 	world.Broadcast(CHighlight("Shutdown initiated."))
-	// TODO(jon): This does not UPDATE, only INSERT.  Need to save changes.
 	log.Println("Shutting down server...")
 	world.db.SaveRaces(library)
 	world.db.SaveCharClasses(library)
@@ -14,17 +13,19 @@ func SaveAndShutdownServer(world *World, library *MudLib) {
 	world.db.SaveRooms(world)
 	log.Println("World and objects saved.")
 
-	log.Println("\r\nLogging off players.")
+	log.Println("Logging off players.")
 	for _, mob := range world.characters {
-		if mob.User.Session.Status() == INGAME {
-			world.RemoveFromWorld(mob)
+		if u := mob.User; u != nil {
+			if u.Session.Status() == INGAME {
+				world.RemoveFromWorld(mob)
+			}
+			u.Session.WriteLine("\r\nGoodbye")
+			u.Session.conn.Close()
 		}
-		mob.User.Session.WriteLine("\r\nGoodbye")
-		mob.User.Session.conn.Close()
 	}
 	log.Println("All players logged off.")
 
-	log.Println("\r\nClosing database connection...")
+	log.Println("Closing database connection...")
 	defer world.db.DatabaseConnection().Close()
 	log.Println("Database disconnected.")
 
