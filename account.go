@@ -14,12 +14,12 @@ type Account struct {
 	lastIp     string
 	lastDate   time.Time
 	email      string
-	characters map[string]*MOB
+	characters map[string]*Player
 }
 
 func NewAccount() *Account {
 	return &Account{
-		characters: make(map[string]*MOB),
+		characters: make(map[string]*Player),
 	}
 }
 

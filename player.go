@@ -9,24 +9,146 @@ import (
 )
 
 type Player struct {
-	name          string `json:"name"`
-	Account       string `json:"account"`
+	name          string
+	Account       string
 	User          *User
-	Room          *Room
+	room          *Room
 	CurState      *CharState
 	MaxState      *CharState
 	BasePhyStats  *PhyStats
 	CurPhyStats   *PhyStats
 	BaseCharStats *CharStats
 	CurCharStats  *CharStats
-	Experience    uint64 `json:"exp"`
-	RealmPoints   uint32 `json:"rp"`
+	Experience    uint64
+	RealmPoints   uint32
 	inventory     []*Item
-	Coins         uint64 `json:"coins"`
+	coins         uint64
 	tickType      TickType
 	tickCount     uint64
-	Victim        *MOB
+	victim        MOB
 	LastDate      string
+}
+
+func (p *Player) Name() string {
+	return p.name
+}
+
+func (p *Player) SetName(newName string) {
+	p.name = newName
+}
+
+func (p *Player) Coins() uint64 {
+	return p.coins
+}
+
+func (p *Player) SetCoins(amount uint64) {
+	p.coins = amount
+}
+
+func (p *Player) AdjCoins(amount int64) {
+	if amount < 0 {
+		less := uint64(-amount)
+		if less > p.coins {
+			p.coins = 0
+		} else {
+			p.coins -= less
+		}
+	} else {
+		p.coins += uint64(amount)
+	}
+}
+
+func (p *Player) basePhyStats() *PhyStats {
+	return p.BasePhyStats
+}
+
+func (p *Player) curPhyStats() *PhyStats {
+	return p.CurPhyStats
+}
+
+func (p *Player) recoverPhyStats() {
+	p.CurPhyStats = p.BasePhyStats.copyOf()
+}
+
+func (p *Player) curState() *CharState {
+	return p.CurState
+}
+
+func (p *Player) maxState() *CharState {
+	return p.MaxState
+}
+
+func (p *Player) adjHits(amount int16, max uint16) {
+	newHits := int32(p.curState().hits()) + int32(amount)
+	if newHits < 0 {
+		p.curState().setHits(0)
+	} else if newHits > int32(max) {
+		p.curState().setHits(max)
+	} else {
+		p.curState().setHits(uint16(newHits))
+	}
+}
+
+func (p *Player) adjFat(amount int16, max uint16) {
+	newFat := int32(p.curState().fat()) + int32(amount)
+	if newFat < 0 {
+		p.curState().setFat(0)
+	} else if newFat > int32(max) {
+		p.curState().setFat(max)
+	} else {
+		p.curState().setFat(uint16(newFat))
+	}
+}
+
+func (p *Player) adjPower(amount int16, max uint16) {
+	newPower := int32(p.curState().power()) + int32(amount)
+	if newPower < 0 {
+		p.curState().setPower(0)
+	} else if newPower > int32(max) {
+		p.curState().setPower(max)
+	} else {
+		p.curState().setPower(uint16(newPower))
+	}
+}
+
+func (p *Player) adjMaxHits(amount int16) {
+	newHits := int32(p.maxState().hits()) + int32(amount)
+	if newHits < 0 {
+		newHits = 0
+	}
+	p.maxState().setHits(uint16(newHits))
+}
+
+func (p *Player) adjMaxFat(amount int16) {
+	newFat := int32(p.maxState().fat()) + int32(amount)
+	if newFat < 0 {
+		newFat = 0
+	}
+	p.maxState().setFat(uint16(newFat))
+}
+
+func (p *Player) adjMaxPower(amount int16) {
+	newPower := int32(p.maxState().power()) + int32(amount)
+	if newPower < 0 {
+		newPower = 0
+	}
+	p.maxState().setPower(uint16(newPower))
+}
+
+func (p *Player) recoverCharState() {
+	p.CurState = p.maxState().copyOf()
+}
+
+func (p *Player) curCharStats() *CharStats {
+	return p.CurCharStats
+}
+
+func (p *Player) baseCharStats() *CharStats {
+	return p.BaseCharStats
+}
+
+func (p *Player) recoverCharStats() {
+	p.CurCharStats = p.BaseCharStats.copyOf()
 }
 
 func (p *Player) isPlayer() bool {
@@ -77,34 +199,26 @@ func (p *Player) MoveItemTo(item *Item) {
 	item.SetOwner(p)
 }
 
-func (p *Player) Name() string {
-	return p.name
-}
-
-func (p *Player) SetName(newName string) {
-	p.name = newName
-}
-
 func (p *Player) AttackVictim() {
-	victim := p.Victim
+	victim := p.Victim()
 	if victim == nil {
 		return
 	}
-	if victim.Room == p.Room {
+	if victim.Room() == p.Room() {
 		p.attackTarget(victim)
 	}
 }
 
 func (p *Player) Tick(tType TickType) bool {
-	if p == nil || tType == TICK_STOP {
+	if p == nil || tType == TickStop {
 		return false
 	}
 
 	p.tickCount++
 	switch p.tickType {
-	case TICK_NORMAL:
+	case TickNormal:
 
-	case TICK_PLAYER:
+	case TickPlayer:
 		if p.curState().alive() {
 			if p.tickCount%2 == 0 {
 				// heal power
@@ -116,13 +230,13 @@ func (p *Player) Tick(tType TickType) bool {
 			}
 		}
 
-	case TICK_STOP:
+	case TickStop:
 		return false
 	}
 
 	time.Sleep(1000 * time.Millisecond)
 	go p.Tick(p.tickType)
-	return p.tickType != TICK_STOP
+	return p.tickType != TickStop
 }
 
 func (p *Player) Init(library *MudLib) {
@@ -173,14 +287,11 @@ func (p *Player) Init(library *MudLib) {
 	p.MaxState = &baseState
 	p.CurState = baseState.copyOf()
 
-	// should only be stop on new mobs
-	if p.tickType == TICK_STOP {
+	// should only be stop on new players
+	if p.tickType == TickStop {
 		p.Experience = 0
-		if p.isPlayer() {
-			p.tickType = TICK_PLAYER
-		} else {
-			p.tickType = TICK_MONSTER
-		}
+		p.tickType = TickPlayer
+
 		go p.Tick(p.tickType)
 	}
 }
@@ -192,120 +303,35 @@ func (p *Player) SendMessage(msg string, newLine bool) {
 	p.User.Session.WriteLine(msg)
 }
 
-func (p *Player) basePhyStats() *PhyStats {
-	return p.BasePhyStats
-}
-
-func (p *Player) curPhyStats() *PhyStats {
-	return p.CurPhyStats
-}
-
-func (p *Player) recoverPhyStats() {
-	p.CurPhyStats = p.BasePhyStats.copyOf()
-}
-
-func (p *Player) curState() *CharState {
-	return p.CurState
-}
-
-func (p *Player) maxState() *CharState {
-	return p.MaxState
-}
-
-func (p *Player) recoverCharState() {
-	p.CurState = p.maxState().copyOf()
-}
-
-func (p *Player) curCharStats() *CharStats {
-	return p.CurCharStats
-}
-
-func (p *Player) baseCharStats() *CharStats {
-	return p.BaseCharStats
-}
-
-func (p *Player) recoverCharStats() {
-	p.CurCharStats = p.BaseCharStats.copyOf()
-}
-
-func (p *Player) adjHits(amount int16, max uint16) {
-	newHits := int32(p.curState().hits()) + int32(amount)
-	if newHits < 0 {
-		p.curState().setHits(0)
-	} else if newHits > int32(max) {
-		p.curState().setHits(max)
-	} else {
-		p.curState().setHits(uint16(newHits))
-	}
-}
-
-func (p *Player) adjFat(amount int16, max uint16) {
-	newFat := int32(p.curState().fat()) + int32(amount)
-	if newFat < 0 {
-		p.curState().setFat(0)
-	} else if newFat > int32(max) {
-		p.curState().setFat(max)
-	} else {
-		p.curState().setFat(uint16(newFat))
-	}
-}
-
-func (p *Player) adjPower(amount int16, max uint16) {
-	newPower := int32(p.curState().power()) + int32(amount)
-	if newPower < 0 {
-		p.curState().setPower(0)
-	} else if newPower > int32(max) {
-		p.curState().setPower(max)
-	} else {
-		p.curState().setPower(uint16(newPower))
-	}
-}
-
-func (p *Player) adjMaxHits(amount int16) {
-	newHits := int32(p.maxState().hits()) + int32(amount)
-	if newHits < 0 {
-		newHits = 0
-	}
-	p.maxState().setHits(uint16(newHits))
-}
-
-func (p *Player) adjMaxFat(amount uint16) {
-	newFat := int32(p.maxState().fat()) + int32(amount)
-	if newFat < 0 {
-		newFat = 0
-	}
-	p.maxState().setFat(uint16(newFat))
-}
-
-func (p *Player) adjMaxPower(amount uint16) {
-	newPower := int32(p.maxState().power()) + int32(amount)
-	if newPower < 0 {
-		newPower = 0
-	}
-	p.maxState().setPower(uint16(newPower))
-}
-
 func (p *Player) Walk(dest *Room, verb string) {
 	p.SendMessage(fmt.Sprintf("You travel %s.", verb), true)
-	p.Room.ShowOthers(p, nil, fmt.Sprintf("%s went %s.", p.Name(), verb))
-	p.Room.RemoveMOB(p)
+	p.Room().ShowOthers(p, nil, fmt.Sprintf("%s went %s.", p.Name(), verb))
+	p.Room().RemoveMOB(p)
 	dest.AddMOB(p)
 	dest.ShowRoom(p)
 	p.adjFat(-2, p.maxState().fat())
-	p.Room.ShowOthers(p, nil, fmt.Sprintf("%s just came in.", p.Name()))
+	p.Room().ShowOthers(p, nil, fmt.Sprintf("%s just came in.", p.Name()))
 }
 
 func (p *Player) WalkThrough(port *Portal) {
 	p.SendMessage(fmt.Sprintf("You travel into a %s.", port.Keyword()), true)
-	p.Room.ShowOthers(p, nil, fmt.Sprintf("%s went into a %s.", p.Name(), port.Keyword()))
-	p.Room.RemoveMOB(p)
+	p.Room().ShowOthers(p, nil, fmt.Sprintf("%s went into a %s.", p.Name(), port.Keyword()))
+	p.Room().RemoveMOB(p)
 	port.DestRoom().AddMOB(p)
 	port.DestRoom().ShowRoom(p)
 	p.adjFat(-2, p.maxState().fat())
-	p.Room.ShowOthers(p, nil, fmt.Sprintf("%s just came in.", p.Name()))
+	p.Room().ShowOthers(p, nil, fmt.Sprintf("%s just came in.", p.Name()))
 }
 
-func (p *Player) attackTarget(target *MOB) {
+func (p *Player) Room() *Room {
+	return p.room
+}
+
+func (p *Player) SetRoom(newRoom *Room) {
+	p.room = newRoom
+}
+
+func (p *Player) attackTarget(target MOB) {
 	if target == nil {
 		p.SendMessage("You must specify a target.", true)
 	}
@@ -325,7 +351,7 @@ func (p *Player) attackTarget(target *MOB) {
 		damage = 0
 	}
 
-	p.Room.ShowOthers(p, target, fmt.Sprintf("\r\n%s attacks %s with their bare hands!", p.Name(), target.Name()))
+	p.Room().ShowOthers(p, target, fmt.Sprintf("\r\n%s attacks %s with their bare hands!", p.Name(), target.Name()))
 
 	if chance > 0 {
 		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands and hit for %s damage.",
@@ -339,6 +365,49 @@ func (p *Player) attackTarget(target *MOB) {
 		p.SendMessage(fmt.Sprintf("You attack %s with your bare hands!  You miss!", target.Name()), true)
 		target.SendMessage(fmt.Sprintf("%s attacks you with their bare hands!  They miss!", p.Name()), true)
 	}
+}
+
+func (p *Player) killMOB(killer MOB) {
+	p.curState().setAlive(false)
+	p.SetVictim(nil)
+	killer.SetVictim(nil)
+
+	p.SendMessage(fmt.Sprintf("You were just killed by %s!", killer.Name()), true)
+	killer.SendMessage(fmt.Sprintf("You just killed %s!", p.Name()), true)
+	p.Room().ShowOthers(p, killer, fmt.Sprintf("%s was just killed by %s!", p.Name(), killer.Name()))
+	// drop held items
+	// handle RP
+	rpAward := uint32(p.curPhyStats().level() - (killer.curPhyStats().level() - p.curPhyStats().level()))
+	plural := "point"
+	if rpAward != 1 {
+		plural = "points"
+	}
+	killer.SendMessage(fmt.Sprintf("You gain %s realm %s!", CHighlight(rpAward), plural), false)
+	killer.AwardRP(rpAward)
+	// create a corpse?  flag
+
+}
+
+func (p *Player) damageMOB(attacker MOB, dmg uint16) {
+	if (p.curState().hits() == 0) && (dmg > 0) {
+		p.killMOB(attacker)
+		return
+	}
+	p.adjHits(int16(-dmg), p.maxState().hits())
+	if p.curState().hits() == 0 {
+		p.SendMessage("You are almost dead!", true)
+	}
+
+	attacker.SetVictim(p)
+	p.SetVictim(attacker)
+}
+
+func (p *Player) Victim() MOB {
+	return p.victim
+}
+
+func (p *Player) SetVictim(newVictim MOB) {
+	p.victim = newVictim
 }
 
 func (p *Player) AwardExp(howMuch uint64) {
@@ -367,64 +436,15 @@ func (p *Player) AwardRP(howMuch uint32) {
 	}
 }
 
-func (p *Player) killMOB(killer *MOB) {
-	p.curState().setAlive(false)
-	p.Victim = nil
-	killer.Victim = nil
-	if p.isPlayer() {
-		p.SendMessage(fmt.Sprintf("You were just killed by %s!", killer.Name()), true)
-		killer.SendMessage(fmt.Sprintf("You just killed %s!", p.Name()), true)
-		p.Room.ShowOthers(p, killer, fmt.Sprintf("%s was just killed by %s!", p.Name(), killer.Name()))
-		// drop held items
-		// handle RP
-		rpAward := uint32(p.curPhyStats().level() - (killer.curPhyStats().level() - p.curPhyStats().level()))
-		plural := "point"
-		if rpAward != 1 {
-			plural = "points"
-		}
-		killer.SendMessage(fmt.Sprintf("You gain %s realm %s!", CHighlight(rpAward), plural), false)
-		killer.AwardRP(rpAward)
-		// create a corpse?  flag
-	} else {
-		expAward := uint64(p.curPhyStats().level() * 100)
-		killer.Room.Show(killer, fmt.Sprintf("%s dies!", p.Name()))
-		killer.SendMessage(fmt.Sprintf("You gain %s experience!", CHighlight(expAward)), false)
-		killer.AwardExp(expAward)
-		p.Room.RemoveMOB(p)
-	}
-}
-
-func (p *Player) damageMOB(attacker *MOB, dmg uint16) {
-	if p.isPlayer() {
-		if (p.curState().hits() == 0) && (dmg > 0) {
-			p.killMOB(attacker)
-			return
-		}
-		p.adjHits(int16(-dmg), p.maxState().hits())
-		if p.curState().hits() == 0 {
-			p.SendMessage("You are almost dead!", true)
-		}
-	} else {
-		p.adjHits(int16(-dmg), p.maxState().hits())
-		if p.curState().hits() <= 0 {
-			p.killMOB(attacker)
-		}
-	}
-
-	attacker.Victim = p
-	p.Victim = attacker
-}
-
-// TODO(jon): Player only
 func (p *Player) releaseCorpse(w *World) {
 	p.recoverCharState()
 	p.recoverPhyStats()
 	target := w.GetRoomById("A")
 	if target != nil {
 		p.SendMessage("You release your corpse!", true)
-		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s releases their corpse!", p.Name()))
-		w.MoveCharacter(p, target)
-		p.Room.ShowOthers(p, nil, fmt.Sprintf("%s appears in a puff of smoke.", p.Name()))
+		p.Room().ShowOthers(p, nil, fmt.Sprintf("%s releases their corpse!", p.Name()))
+		w.MoveMob(p, target)
+		p.Room().ShowOthers(p, nil, fmt.Sprintf("%s appears in a puff of smoke.", p.Name()))
 		return
 	}
 }
@@ -461,7 +481,7 @@ func (p *Player) SavePlayerToDBQuery() (string, error) {
 	}
 	var location string
 	if p.Room != nil {
-		location = p.Room.RoomID()
+		location = p.Room().RoomID()
 	} else {
 		// TODO(jon): need to preserve last room
 		location = ""
@@ -472,7 +492,7 @@ func (p *Player) SavePlayerToDBQuery() (string, error) {
 		class:      p.baseCharStats().CurrentClass().Name(),
 		race:       p.baseCharStats().Race().Name(),
 		room:       location,
-		coins:      p.Coins,
+		coins:      p.Coins(),
 		stre:       p.baseCharStats().Stat(STAT_STRENGTH),
 		cons:       p.baseCharStats().Stat(STAT_CONSTITUTION),
 		agil:       p.baseCharStats().Stat(STAT_AGILITY),

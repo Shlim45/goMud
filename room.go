@@ -93,7 +93,7 @@ type Room struct {
 	Links   []*RoomLink
 	Portals []*Portal
 	Items   []*Item
-	Mobs    []*MOB
+	Mobs    []MOB
 }
 
 func (r *Room) FindItem(query string) *Item {
@@ -191,27 +191,25 @@ func (r *Room) MoveItemTo(item *Item) {
 	item.SetOwner(r)
 }
 
-func (r *Room) Show(source *MOB, msg string) {
+func (r *Room) Show(source MOB, msg string) {
 	for _, player := range r.Mobs {
-		if player.isPlayer() {
+		player.SendMessage(msg, true)
+	}
+}
+
+func (r *Room) ShowOthers(source MOB, target MOB, msg string) {
+	for _, player := range r.Mobs {
+		if player != nil && player != source && player != target {
 			player.SendMessage(msg, true)
 		}
 	}
 }
 
-func (r *Room) ShowOthers(source *MOB, target *MOB, msg string) {
-	for _, player := range r.Mobs {
-		if player != nil && player.isPlayer() && player != source && player != target {
-			player.SendMessage(msg, true)
-		}
-	}
-}
-
-func (r *Room) ShowRoom(player *MOB) {
+func (r *Room) ShowRoom(player MOB) {
 	var output strings.Builder
 
 	output.WriteString("[" + CArea(r.Area.Name) + "]\r\n") // area name
-	output.WriteString(CNormal("You're " + player.Room.Desc))
+	output.WriteString(CNormal("You're " + player.Room().Desc))
 	output.WriteString("\r\n")
 
 	numMobs := len(r.Mobs) - 1
@@ -283,25 +281,25 @@ func (r *Room) ShowRoom(player *MOB) {
 	player.SendMessage(output.String(), true)
 }
 
-func (r *Room) AddMOB(character *MOB) {
+func (r *Room) AddMOB(character MOB) {
 	r.Mobs = append(r.Mobs, character)
-	character.Room = r
+	character.SetRoom(r)
 }
 
-func (r *Room) RemoveMOB(character *MOB) {
+func (r *Room) RemoveMOB(mob MOB) {
 	// NOTE(jon): not setting room to nil to preserve data
 	//character.Room = nil
 
-	var characters []*MOB
+	var mobs []MOB
 	for _, c := range r.Mobs {
-		if c != character {
-			characters = append(characters, c)
+		if c != mob {
+			mobs = append(mobs, c)
 		}
 	}
-	r.Mobs = characters
+	r.Mobs = mobs
 }
 
-func (r *Room) FetchInhabitant(mobName string) *MOB {
+func (r *Room) FetchInhabitant(mobName string) MOB {
 	mobName = strings.ToLower(mobName)
 	for _, c := range r.Mobs {
 		if strings.HasPrefix(strings.ToLower(c.Name()), mobName) {

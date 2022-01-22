@@ -9,7 +9,7 @@ import (
 )
 
 type MudCommand interface {
-	ExecuteCmd(m *MOB, input []string, w *World) bool
+	ExecuteCmd(m *Player, input []string, w *World) bool
 	Trigger() string
 	Timer() time.Duration
 	TimerType() TimerType
@@ -51,9 +51,9 @@ func (c *Command) CheckTimer() bool {
 	return c.checkTimer
 }
 
-func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) bool {
+func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLib) bool {
 	success := false
-	room := m.Room
+	room := m.Room()
 
 	if c.CheckTimer() {
 		// if mob still on timer, return false
@@ -90,14 +90,14 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		success = true
 
 	case "spawn":
-		monster := &MOB{
+		monster := &Monster{
 			name:     "a small dog",
-			tickType: TICK_STOP,
+			tickType: TickStop,
 		}
 		monster.Init(library)
 		monster.basePhyStats().setLevel(5)
-		m.Room.AddMOB(monster)
-		m.Room.Show(m, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
+		m.Room().AddMOB(monster)
+		m.Room().Show(m, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
 		success = true
 
 	case "stats":
@@ -159,9 +159,9 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				m.SendMessage("You don't see them here.", true)
 			}
 		} else {
-			target := m.Victim
+			target := m.Victim()
 			if target != nil {
-				if target.Room != m.Room {
+				if target.Room() != m.Room() {
 					m.SendMessage("You don't see them here.", true)
 					return success
 				}
@@ -252,8 +252,8 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				itemType: TYPE_COINS,
 			}
 
-			m.Room.AddItem(&newItem)
-			m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+			m.Room().AddItem(&newItem)
+			m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
 			success = true
 
 		} else {
@@ -290,8 +290,8 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 					itemType: TYPE_GENERIC,
 				}
 
-				m.Room.AddItem(&newItem)
-				m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+				m.Room().AddItem(&newItem)
+				m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
 				success = true
 			} else if createExit {
 				if len(input) < 6 {
@@ -321,15 +321,15 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 					exitArticle = ""
 				}
 				newExit := Portal{
-					room:     m.Room,
+					room:     m.Room(),
 					destRoom: destRoom,
 					article:  exitArticle,
 					name:     exitName,
 					keyword:  exitKeyword,
 				}
 
-				m.Room.AddPortal(&newExit)
-				m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newExit.Name()))
+				m.Room().AddPortal(&newExit)
+				m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newExit.Name()))
 				success = true
 			}
 		}
@@ -341,18 +341,18 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		}
 
 		targetItem := input[1]
-		item := m.Room.FindItem(targetItem)
+		item := m.Room().FindItem(targetItem)
 		if item != nil {
 			if item.ItemType() == ItemType(TYPE_COINS) {
 				numCoins := item.Value()
-				m.Room.RemoveItem(item)
-				m.Coins += numCoins
+				m.Room().RemoveItem(item)
+				m.AdjCoins(int64(numCoins))
 				m.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
 			} else {
 				m.MoveItemTo(item)
 				m.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
 			}
-			m.Room.ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
+			m.Room().ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
 			success = true
 		} else {
 			m.SendMessage(fmt.Sprintf("You don't see a '%s' here.", targetItem), true)
@@ -360,18 +360,18 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		}
 
 		/*
-			for _, item := range m.Room.Items {
+			for _, item := range m.Room().Items {
 				if strings.HasPrefix(item.Keyword(), targetItem) {
 					if item.ItemType() == ItemType(TYPE_COINS) {
 						numCoins := item.Value()
-						m.Room.RemoveItem(item)
+						m.Room().RemoveItem(item)
 						m.Coins += numCoins
 						m.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
 					} else {
 						m.MoveItemTo(item)
 						m.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
 					}
-					m.Room.ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
+					m.Room().ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
 					success = true
 					break
 				}
@@ -394,7 +394,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				return success
 			}
 
-			if m.Coins < uint64(n) {
+			if m.Coins() < uint64(n) {
 				m.SendMessage("You aren't carrying enough silver!", true)
 				return success
 			}
@@ -407,10 +407,10 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				value:   uint64(n),
 			}
 
-			m.Coins -= uint64(n)
-			m.Room.MoveItemTo(&coinsItem)
+			m.AdjCoins(-int64(n))
+			m.Room().MoveItemTo(&coinsItem)
 			m.SendMessage(fmt.Sprintf("You drop %d silver coins.", n), true)
-			m.Room.ShowOthers(m, nil, fmt.Sprintf("%s drops %s.", m.Name(), coinsItem.FullName()))
+			m.Room().ShowOthers(m, nil, fmt.Sprintf("%s drops %s.", m.Name(), coinsItem.FullName()))
 			success = true
 			break
 		}
@@ -419,9 +419,9 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		if !success {
 			for _, item := range m.Inventory() {
 				if strings.HasPrefix(item.Keyword(), targetItem) {
-					m.Room.MoveItemTo(item)
+					m.Room().MoveItemTo(item)
 					m.SendMessage(fmt.Sprintf("You drop %s.", item.FullName()), true)
-					m.Room.ShowOthers(m, nil, fmt.Sprintf("%s drops %s.", m.Name(), item.FullName()))
+					m.Room().ShowOthers(m, nil, fmt.Sprintf("%s drops %s.", m.Name(), item.FullName()))
 					success = true
 					break
 				}
@@ -442,7 +442,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		itemName := input[1]
 		targetName := input[2]
 
-		targetMob := m.Room.FetchInhabitant(targetName)
+		targetMob := m.Room().FetchInhabitant(targetName)
 		if targetMob == nil {
 			m.SendMessage("You don't see them here.", true)
 			return success
@@ -455,19 +455,19 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				m.SendMessage("You must specify a number greater than 0 to give coins!", true)
 				return success
 			}
-			if m.Coins < numCoins {
+			if m.Coins() < numCoins {
 				m.SendMessage("You aren't carrying enough silver!", true)
 				return success
 			}
 
-			m.Coins -= numCoins
-			targetMob.Coins += numCoins
+			m.AdjCoins(-int64(numCoins))
+			targetMob.AdjCoins(int64(numCoins))
 
 			m.SendMessage(fmt.Sprintf("You give %d silver coins to %s.",
 				numCoins, targetMob.Name()), true)
 			targetMob.SendMessage(fmt.Sprintf("%s gives you %d silver coins.",
 				m.Name(), numCoins), true)
-			m.Room.ShowOthers(m, targetMob, fmt.Sprintf("%s gives %s some silver coins.",
+			m.Room().ShowOthers(m, targetMob, fmt.Sprintf("%s gives %s some silver coins.",
 				m.Name(), targetMob.Name()))
 			success = true
 		}
@@ -480,7 +480,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 						item.FullName(), targetMob.Name()), true)
 					targetMob.SendMessage(fmt.Sprintf("%s gives you %s.",
 						m.Name(), item.FullName()), true)
-					m.Room.ShowOthers(m, targetMob, fmt.Sprintf("%s gives %s %s.",
+					m.Room().ShowOthers(m, targetMob, fmt.Sprintf("%s gives %s %s.",
 						m.Name(), targetMob.Name(), item.FullName()))
 					success = true
 					break
@@ -506,7 +506,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 
 		targetPortal := input[1]
 
-		port := m.Room.FindExit(targetPortal)
+		port := m.Room().FindExit(targetPortal)
 		if port != nil {
 			destRoom := port.DestRoom()
 			if destRoom != nil {
@@ -544,7 +544,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 
 	if success {
 		// handle timer and usage cost
-		if c.CostType() == COST_FAT {
+		if c.CostType() == CostFat {
 			m.adjFat(-c.UseCost(), m.maxState().fat())
 		}
 	}

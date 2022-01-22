@@ -7,7 +7,7 @@ type Race interface {
 	Name() string
 	SetEnabled(yesNo bool)
 	Enabled() bool
-	Qualifies(m *MOB) bool
+	Qualifies(m MOB) bool
 	SetStatBonuses(statBonuses [NUM_STATS]float64)
 	StatBonuses() *[NUM_STATS]float64
 	SaveRaceToDBQuery() string
@@ -35,7 +35,7 @@ func (r *PlayerRace) SetEnabled(yesNo bool) {
 	r.enabled = yesNo
 }
 
-func (r *PlayerRace) Qualifies(m *MOB) bool {
+func (r *PlayerRace) Qualifies(m MOB) bool {
 	return true
 }
 

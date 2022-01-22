@@ -8,7 +8,7 @@ import (
 
 type Monster struct {
 	name          string `json:"name"`
-	Room          *Room
+	room          *Room
 	CurState      *CharState
 	MaxState      *CharState
 	BasePhyStats  *PhyStats
@@ -17,10 +17,10 @@ type Monster struct {
 	CurCharStats  *CharStats
 	Experience    uint64 `json:"exp"`
 	inventory     []*Item
-	Coins         uint64 `json:"coins"`
+	coins         uint64 `json:"coins"`
 	tickType      TickType
 	tickCount     uint64
-	Victim        *MOB
+	victim        MOB
 }
 
 func (m *Monster) isPlayer() bool {
@@ -66,26 +66,47 @@ func (m *Monster) SetName(newName string) {
 	m.name = newName
 }
 
+func (m *Monster) Coins() uint64 {
+	return m.coins
+}
+
+func (m *Monster) SetCoins(amount uint64) {
+	m.coins = amount
+}
+
+func (m *Monster) AdjCoins(amount int64) {
+	if amount < 0 {
+		less := uint64(-amount)
+		if less > m.coins {
+			m.coins = 0
+		} else {
+			m.coins -= less
+		}
+	} else {
+		m.coins += uint64(amount)
+	}
+}
+
 func (m *Monster) AttackVictim() {
-	victim := m.Victim
+	victim := m.Victim()
 	if victim == nil {
 		return
 	}
-	if victim.Room == m.Room {
+	if victim.Room() == m.Room() {
 		m.attackTarget(victim)
 	}
 }
 
 func (m *Monster) Tick(tType TickType) bool {
-	if m == nil || tType == TICK_STOP {
+	if m == nil || tType == TickStop {
 		return false
 	}
 
 	m.tickCount++
 	switch m.tickType {
-	case TICK_NORMAL:
+	case TickNormal:
 
-	case TICK_MONSTER:
+	case TickMonster:
 		if !m.curState().alive() {
 			return false
 		}
@@ -94,13 +115,13 @@ func (m *Monster) Tick(tType TickType) bool {
 			m.AttackVictim()
 		}
 
-	case TICK_STOP:
+	case TickStop:
 		return false
 	}
 
 	time.Sleep(1000 * time.Millisecond)
 	go m.Tick(m.tickType)
-	return m.tickType != TICK_STOP
+	return m.tickType != TickStop
 }
 
 func (m *Monster) Init(library *MudLib) {
@@ -151,13 +172,9 @@ func (m *Monster) Init(library *MudLib) {
 	m.CurState = baseState.copyOf()
 
 	// should only be stop on new mobs
-	if m.tickType == TICK_STOP {
-		m.Experience = 0
-		if m.isPlayer() {
-			m.tickType = TICK_PLAYER
-		} else {
-			m.tickType = TICK_MONSTER
-		}
+	if m.tickType == TickStop {
+		m.tickType = TickMonster
+
 		go m.Tick(m.tickType)
 	}
 }
@@ -239,7 +256,7 @@ func (m *Monster) adjMaxHits(amount int16) {
 	m.maxState().setHits(uint16(newHits))
 }
 
-func (m *Monster) adjMaxFat(amount uint16) {
+func (m *Monster) adjMaxFat(amount int16) {
 	newFat := int32(m.maxState().fat()) + int32(amount)
 	if newFat < 0 {
 		newFat = 0
@@ -247,7 +264,7 @@ func (m *Monster) adjMaxFat(amount uint16) {
 	m.maxState().setFat(uint16(newFat))
 }
 
-func (m *Monster) adjMaxPower(amount uint16) {
+func (m *Monster) adjMaxPower(amount int16) {
 	newPower := int32(m.maxState().power()) + int32(amount)
 	if newPower < 0 {
 		newPower = 0
@@ -255,25 +272,37 @@ func (m *Monster) adjMaxPower(amount uint16) {
 	m.maxState().setPower(uint16(newPower))
 }
 
+func (m *Monster) SendMessage(msg string, newLine bool) {
+	// TODO(jon): if possessed
+}
+
 func (m *Monster) Walk(dest *Room, verb string) {
-	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s went %s.", m.Name(), verb))
-	m.Room.RemoveMOB(m)
+	m.Room().ShowOthers(m, nil, fmt.Sprintf("%s went %s.", m.Name(), verb))
+	m.Room().RemoveMOB(m)
 	dest.AddMOB(m)
 	dest.ShowRoom(m)
 	m.adjFat(-2, m.maxState().fat())
-	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
+	m.Room().ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
 }
 
 func (m *Monster) WalkThrough(port *Portal) {
-	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s went into a %s.", m.Name(), port.Keyword()))
-	m.Room.RemoveMOB(m)
+	m.Room().ShowOthers(m, nil, fmt.Sprintf("%s went into a %s.", m.Name(), port.Keyword()))
+	m.Room().RemoveMOB(m)
 	port.DestRoom().AddMOB(m)
 	port.DestRoom().ShowRoom(m)
 	m.adjFat(-2, m.maxState().fat())
-	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
+	m.Room().ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
 }
 
-func (m *Monster) attackTarget(target *MOB) {
+func (m *Monster) Room() *Room {
+	return m.room
+}
+
+func (m *Monster) SetRoom(newRoom *Room) {
+	m.room = newRoom
+}
+
+func (m *Monster) attackTarget(target MOB) {
 	if target == nil {
 		return
 	}
@@ -291,7 +320,7 @@ func (m *Monster) attackTarget(target *MOB) {
 		damage = 0
 	}
 
-	m.Room.ShowOthers(m, target, fmt.Sprintf("\r\n%s attacks %s!", m.Name(), target.Name()))
+	m.Room().ShowOthers(m, target, fmt.Sprintf("\r\n%s attacks %s!", m.Name(), target.Name()))
 
 	if chance > 0 {
 		target.SendMessage(fmt.Sprintf("%s attacks you!  You are hit for %s damage.",
@@ -303,25 +332,41 @@ func (m *Monster) attackTarget(target *MOB) {
 	}
 }
 
-func (m *Monster) killMOB(killer *MOB) {
+func (m *Monster) killMOB(killer MOB) {
 	m.curState().setAlive(false)
-	m.Victim = nil
-	killer.Victim = nil
+	m.SetVictim(nil)
+	killer.SetVictim(nil)
 
 	expAward := uint64(m.curPhyStats().level() * 100)
-	killer.Room.Show(killer, fmt.Sprintf("%s dies!", m.Name()))
+	killer.Room().Show(killer, fmt.Sprintf("%s dies!", m.Name()))
 	killer.SendMessage(fmt.Sprintf("You gain %s experience!", CHighlight(expAward)), false)
 	killer.AwardExp(expAward)
-	m.Room.RemoveMOB(m)
+	m.Room().RemoveMOB(m)
 
 }
 
-func (m *Monster) damageMOB(attacker *MOB, dmg uint16) {
+func (m *Monster) damageMOB(attacker MOB, dmg uint16) {
 	m.adjHits(int16(-dmg), m.maxState().hits())
 	if m.curState().hits() <= 0 {
 		m.killMOB(attacker)
 	}
 
-	attacker.Victim = m
-	m.Victim = attacker
+	attacker.SetVictim(m)
+	m.SetVictim(attacker)
+}
+
+func (m *Monster) Victim() MOB {
+	return m.victim
+}
+
+func (m *Monster) SetVictim(newVictim MOB) {
+	m.victim = newVictim
+}
+
+func (m *Monster) AwardExp(howMuch uint64) {
+	// TODO(jon) if pet
+}
+
+func (m *Monster) AwardRP(howMuch uint32) {
+	// TODO(jon) if pet
 }

@@ -237,11 +237,11 @@ func (db *DatabaseConnection) LoadPlayers(w *World, lib *MudLib) {
 			Laying:   false,
 		}
 
-		newPlayer := MOB{
+		newPlayer := Player{
 			name:          pTag.name,
 			Account:       pTag.account,
 			User:          nil,
-			Room:          w.GetRoomById(pTag.room),
+			room:          w.GetRoomById(pTag.room),
 			CurState:      maxCState.copyOf(),
 			MaxState:      &maxCState,
 			BasePhyStats:  &basePStats,
@@ -251,10 +251,10 @@ func (db *DatabaseConnection) LoadPlayers(w *World, lib *MudLib) {
 			Experience:    pTag.exp,
 			RealmPoints:   pTag.rp,
 			inventory:     nil,
-			Coins:         pTag.coins,
-			tickType:      TICK_STOP,
+			coins:         pTag.coins,
+			tickType:      TickStop,
 			tickCount:     0,
-			Victim:        nil,
+			victim:        nil,
 			LastDate:      pTag.last_date,
 		}
 		w.characters[newPlayer.Name()] = &newPlayer

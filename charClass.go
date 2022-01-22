@@ -7,7 +7,7 @@ type CharClass interface {
 	Name() string
 	SetEnabled(yesNo bool)
 	Enabled() bool
-	Qualifies(m *MOB) bool
+	Qualifies(m MOB) bool
 	//AllowedRace(r *Race) bool
 	SetRealm(realm Realm)
 	Realm() Realm
@@ -40,7 +40,7 @@ func (pc *PlayerClass) SetEnabled(yesNo bool) {
 	pc.enabled = yesNo
 }
 
-func (pc *PlayerClass) Qualifies(m *MOB) bool {
+func (pc *PlayerClass) Qualifies(m MOB) bool {
 	return true
 }
 

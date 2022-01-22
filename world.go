@@ -11,7 +11,7 @@ import (
 type World struct {
 	accounts    map[string]*Account
 	charClasses map[string]CharClass
-	characters  map[string]*MOB
+	characters  map[string]*Player
 	areas       map[string]*Area
 	rooms       []*Room
 	db          DBConnection
@@ -22,7 +22,7 @@ func NewWorld(db DBConnection) *World {
 	return &World{
 		accounts:    make(map[string]*Account),
 		charClasses: make(map[string]CharClass),
-		characters:  make(map[string]*MOB),
+		characters:  make(map[string]*Player),
 		areas:       make(map[string]*Area),
 		db:          db,
 	}
@@ -47,22 +47,22 @@ func (w *World) Tick() {
 	go w.Tick()
 }
 
-func (w *World) HandleCharacterJoined(character *MOB) {
-	room := character.Room
+func (w *World) HandleCharacterJoined(character *Player) {
+	room := character.Room()
 	if room != nil {
 		room.AddMOB(character)
 	} else {
 		w.rooms[0].AddMOB(character)
 	}
 
-	character.Room.ShowRoom(character)
-	character.Room.ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name()))
+	character.Room().ShowRoom(character)
+	character.Room().ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name()))
 
 	log.Println(fmt.Sprintf("Player login: %s", character.Name()))
 }
 
-func (w *World) RemoveFromWorld(character *MOB) {
-	room := character.Room
+func (w *World) RemoveFromWorld(character *Player) {
+	room := character.Room()
 	if room != nil {
 		room.RemoveMOB(character)
 		room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name()))
@@ -99,11 +99,11 @@ func (w *World) GetRoomById(id string) *Room {
 	return nil
 }
 
-func (w *World) MoveCharacter(character *MOB, to *Room) {
-	character.Room.RemoveMOB(character)
-	to.AddMOB(character)
-	to.ShowRoom(character)
-	character.adjFat(-2, character.maxState().fat())
+func (w *World) MoveMob(mob MOB, to *Room) {
+	mob.Room().RemoveMOB(mob)
+	to.AddMOB(mob)
+	to.ShowRoom(mob)
+	mob.adjFat(-2, mob.maxState().fat())
 }
 
 func (w *World) FindUserAccount(uName string) (*Account, error) {
@@ -237,12 +237,12 @@ func (w *World) HandleUserLogin(user *User, input string) {
 	}
 }
 
-func (w *World) HandlePlayerInput(player *MOB, input string, library *MudLib) {
+func (w *World) HandlePlayerInput(player *Player, input string, library *MudLib) {
 	tokens := strings.Split(input, " ")
 	success := false
 	cmd := library.FindCommand(tokens[0])
 
-	for _, link := range player.Room.Links {
+	for _, link := range player.Room().Links {
 		if link.Verb == tokens[0] || strings.HasPrefix(link.Verb, tokens[0]) {
 			if player.curState().fat() < 2 {
 				player.SendMessage("You are too tired!", true)

@@ -115,7 +115,7 @@ func (l *MudLib) FindCharClass(search string) CharClass {
 func (l *MudLib) LoadCharClasses() {
 	Fighter := PlayerClass{
 		name:    "Fighter",
-		realm:   REALM_IMMORTAL,
+		realm:   RealmImmortal,
 		enabled: false,
 		statBonuses: [6]float64{
 			1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
@@ -125,7 +125,7 @@ func (l *MudLib) LoadCharClasses() {
 
 	Skeleton := PlayerClass{
 		name:    "Skeleton",
-		realm:   REALM_EVIL,
+		realm:   RealmEvil,
 		enabled: true,
 		statBonuses: [6]float64{
 			1.5, 0.6, 1.4, 1.6, 0.4, 0.5,
@@ -135,7 +135,7 @@ func (l *MudLib) LoadCharClasses() {
 
 	Necromancer := PlayerClass{
 		name:    "Necromancer",
-		realm:   REALM_EVIL,
+		realm:   RealmEvil,
 		enabled: true,
 		statBonuses: [6]float64{
 			0.5, 0.6, 1.3, 0.7, 1.5, 1.4,
@@ -212,8 +212,8 @@ func (l *MudLib) LoadCommands() {
 	SayCmd := Command{
 		trigger:    "say",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -222,8 +222,8 @@ func (l *MudLib) LoadCommands() {
 	LookCmd := Command{
 		trigger:    "look",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -232,8 +232,8 @@ func (l *MudLib) LoadCommands() {
 	RenameCmd := Command{
 		trigger:    "rename",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -242,8 +242,8 @@ func (l *MudLib) LoadCommands() {
 	RerollCmd := Command{
 		trigger:    "reroll",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -252,8 +252,8 @@ func (l *MudLib) LoadCommands() {
 	SpawnCmd := Command{
 		trigger:    "spawn",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -262,8 +262,8 @@ func (l *MudLib) LoadCommands() {
 	StatsCmd := Command{
 		trigger:    "stats",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -272,8 +272,8 @@ func (l *MudLib) LoadCommands() {
 	HealthCmd := Command{
 		trigger:    "health",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -282,8 +282,8 @@ func (l *MudLib) LoadCommands() {
 	ReleaseCmd := Command{
 		trigger:    "release",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -292,8 +292,8 @@ func (l *MudLib) LoadCommands() {
 	AttackCmd := Command{
 		trigger:    "hit",
 		timer:      2000,
-		timerType:  TIMER_ATTACK,
-		costType:   COST_FAT,
+		timerType:  TimerAttack,
+		costType:   CostFat,
 		useCost:    3,
 		checkTimer: true,
 	}
@@ -302,8 +302,8 @@ func (l *MudLib) LoadCommands() {
 	InfoCmd := Command{
 		trigger:    "information",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -312,8 +312,8 @@ func (l *MudLib) LoadCommands() {
 	QuitCmd := Command{
 		trigger:    "quit",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -322,8 +322,8 @@ func (l *MudLib) LoadCommands() {
 	InventoryCmd := Command{
 		trigger:    "inventory",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -332,8 +332,8 @@ func (l *MudLib) LoadCommands() {
 	WealthCmd := Command{
 		trigger:    "wealth",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -342,8 +342,8 @@ func (l *MudLib) LoadCommands() {
 	CreateCmd := Command{
 		trigger:    "create",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -352,8 +352,8 @@ func (l *MudLib) LoadCommands() {
 	GetCmd := Command{
 		trigger:    "get",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -362,8 +362,8 @@ func (l *MudLib) LoadCommands() {
 	DropCmd := Command{
 		trigger:    "drop",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: true,
 	}
@@ -372,8 +372,8 @@ func (l *MudLib) LoadCommands() {
 	GiveCmd := Command{
 		trigger:    "give",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
@@ -382,8 +382,8 @@ func (l *MudLib) LoadCommands() {
 	GoCmd := Command{
 		trigger:    "go",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: true,
 	}
@@ -392,8 +392,8 @@ func (l *MudLib) LoadCommands() {
 	ShutdownCmd := Command{
 		trigger:    "shutdown",
 		timer:      0,
-		timerType:  TIMER_NONE,
-		costType:   COST_NONE,
+		timerType:  TimerNone,
+		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
 	}
