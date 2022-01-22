@@ -24,7 +24,7 @@ func handleConnection(conn net.Conn, inputChannel chan SessionEvent) error {
 
 	buf := make([]byte, 4096)
 
-	session := &Session{generateSessionId(), conn}
+	session := &Session{generateSessionId(), conn, DEFAULT}
 
 	inputChannel <- SessionEvent{session, &SessionCreatedEvent{}}
 
@@ -32,8 +32,7 @@ func handleConnection(conn net.Conn, inputChannel chan SessionEvent) error {
 		n, err := conn.Read(buf)
 		if err != nil && err != io.EOF {
 			inputChannel <- SessionEvent{session, &SessionDisconnectedEvent{}}
-			log.Fatalln("Error reading from connection", err)
-			return err
+			log.Printf("Session disconnected from %s (%s)", session.conn.LocalAddr(), session.conn.RemoteAddr())
 		}
 		if n == 0 {
 			inputChannel <- SessionEvent{session, &SessionDisconnectedEvent{}}

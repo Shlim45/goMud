@@ -227,7 +227,8 @@ func (r *Room) AddMOB(character *MOB) {
 }
 
 func (r *Room) RemoveMOB(character *MOB) {
-	character.Room = nil
+	// NOTE(jon): not setting room to nil to preserve data
+	//character.Room = nil
 
 	var characters []*MOB
 	for _, c := range r.Mobs {

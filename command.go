@@ -241,7 +241,9 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		success = true
 
 	case "quit":
-		m.SendMessage("Not working yet, Ctrl+] to quit from telnet prompt.", true)
+		//m.User.Session.conn.Close()
+		m.SendMessage("Are you sure you want to quit? (y/N)", true)
+		m.User.Session.SetStatus(QUIT)
 
 	case "inventory":
 		m.ShowInventory()

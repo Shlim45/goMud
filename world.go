@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -32,6 +33,7 @@ func (w *World) AddArea(area *Area) {
 	}
 }
 
+/*
 func (w *World) Init() {
 	w.areas["Darkness Falls"] = &Area{
 		Name:  "Darkness Falls",
@@ -100,12 +102,13 @@ func (w *World) Init() {
 	areaRooms := w.rooms
 	w.areas["Darkness Falls"].Rooms = areaRooms
 }
+*/
 
 func (w *World) HandleCharacterJoined(character *MOB) {
-	w.characters[character.Name()] = character
+	//w.characters[character.Name()] = character
 	w.rooms[0].AddMOB(character)
 
-	character.SendMessage("Welcome to Darkness Falls\n\r", true)
+	//character.SendMessage("Welcome to Darkness Falls\n\r", true)
 	character.Room.ShowRoom(character)
 	character.Room.ShowOthers(character, nil, fmt.Sprintf("%s appears in a puff of smoke.", character.Name()))
 
@@ -114,8 +117,10 @@ func (w *World) HandleCharacterJoined(character *MOB) {
 
 func (w *World) RemoveFromWorld(character *MOB) {
 	room := character.Room
-	room.RemoveMOB(character)
-	room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name()))
+	if room != nil {
+		room.RemoveMOB(character)
+		room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name()))
+	}
 
 	log.Println(fmt.Sprintf("Player logout: %s", character.Name()))
 }
@@ -140,6 +145,137 @@ func (w *World) MoveCharacter(character *MOB, to *Room) {
 	to.AddMOB(character)
 	to.ShowRoom(character)
 	character.adjFat(-2, character.maxState().fat())
+}
+
+func (w *World) FindUserAccount(uName string) (*Account, error) {
+	uName = strings.ToLower(uName)
+	for key, account := range w.accounts {
+		lowKey := strings.ToLower(key)
+		if strings.Compare(lowKey, uName) == 0 {
+			return account, nil
+		}
+	}
+	return nil, errors.New("user Account not found")
+}
+
+func (w *World) HandleUserLogin(user *User, input string) {
+	session := user.Session
+	switch session.Status() {
+	case DEFAULT:
+		session.WriteLine(CHighlight("\r\nWelcome to Darkness Falls.\r\n"))
+		session.WriteLine("Username: ")
+		session.SetStatus(USERNAME)
+
+	case USERNAME:
+		account, err := w.FindUserAccount(input)
+		if err == nil {
+			user.Account = account
+		}
+		session.WriteLine("\r\nPassword: ")
+		// TODO(jon): TELNET ECHOOFF
+		session.SetStatus(PASSWORD)
+
+	case PASSWORD:
+		if user.Account != nil {
+			if user.Account.CheckPasswordHash(input) {
+				session.SetStatus(MENU)
+			} else {
+				session.WriteLine("\r\nInvalid username and/or password.")
+				user.Account = nil
+				session.WriteLine("\r\nUsername: ")
+				session.SetStatus(USERNAME)
+			}
+		} else {
+			session.WriteLine("\r\nInvalid username and/or password.")
+			session.WriteLine("\r\nUsername: ")
+			session.SetStatus(USERNAME)
+		}
+		if session.Status() == MENU {
+			session.WriteLine("\r\n")
+
+			session.WriteLine("Please choose an option:")
+			session.WriteLine(fmt.Sprintf("%s - Create Character", CHighlight("C")))
+			session.WriteLine(fmt.Sprintf("%s - Select Character", CHighlight("S")))
+			session.WriteLine(fmt.Sprintf("%s - Quit Darkness Falls", CHighlight("Q")))
+		}
+
+	case MENU:
+		switch strings.ToUpper(input) {
+		case "C":
+			session.WriteLine("Coming soon!  Bye now!")
+			session.SetStatus(CREATE)
+
+		case "S":
+			var chars strings.Builder
+			if len(user.Account.characters) > 0 {
+				chars.WriteString("\r\n")
+				for _, mob := range user.Account.characters {
+					chars.WriteString(fmt.Sprintf("%-20v lvl %d %s\r\n",
+						BrightBlue(mob.Name()), mob.curPhyStats().level(), mob.curCharStats().CurrentClass().Name()))
+				}
+				chars.WriteString("\r\nEnter Character Name: ")
+				session.WriteLine(chars.String())
+				session.SetStatus(SELECT)
+			} else {
+				chars.WriteString("\r\nNo Characters found.  CREATE a new Character!")
+				session.WriteLine("Coming soon!  Bye now!")
+				session.SetStatus(CREATE)
+			}
+
+		case "Q":
+			session.SetStatus(QUIT)
+
+		default:
+			session.WriteLine("\r\n")
+
+			session.WriteLine(CHighlight("Please choose an option:"))
+			session.WriteLine(fmt.Sprintf("%s - Create Character", CHighlight("C")))
+			session.WriteLine(fmt.Sprintf("%s - Select Character", CHighlight("S")))
+			session.WriteLine(fmt.Sprintf("%s - Quit Darkness Falls", CHighlight("Q")))
+
+			session.WriteLine("\r\n")
+		}
+
+	case CREATE:
+		session.SetStatus(QUIT)
+
+	case SELECT:
+		var chars strings.Builder
+		for name, mob := range user.Account.characters {
+			chars.WriteString(fmt.Sprintf("%-15v lvl %d %s\r\n",
+				CHighlight(mob.Name()), mob.curPhyStats().level(), mob.curCharStats().CurrentClass().Name()))
+			if strings.Compare(strings.ToLower(input), strings.ToLower(name)) == 0 {
+				user.Character = mob
+				mob.User = user
+				session.SetStatus(INGAME)
+				w.HandleCharacterJoined(mob)
+				return
+			}
+		}
+		chars.WriteString("\r\nInvalid selections, Enter Character Name: ")
+
+	case QUIT:
+		if strings.Compare(strings.ToLower(input), "y") == 0 {
+			session.SetStatus(DEFAULT)
+			session.WriteLine("\r\nGoodbye")
+			if user.Character != nil {
+				w.RemoveFromWorld(user.Character)
+			}
+			session.conn.Close()
+		} else if user.Character != nil {
+			session.SetStatus(INGAME)
+		} else {
+			session.WriteLine("\r\n")
+
+			session.WriteLine(CHighlight("Please choose an option:"))
+			session.WriteLine(fmt.Sprintf("%s - Create Character", CHighlight("C")))
+			session.WriteLine(fmt.Sprintf("%s - Select Character", CHighlight("S")))
+			session.WriteLine(fmt.Sprintf("%s - Quit Darkness Falls", CHighlight("Q")))
+
+			session.WriteLine("\r\n")
+			session.SetStatus(MENU)
+		}
+	}
 }
 
 func (w *World) HandlePlayerInput(player *MOB, input string, library *MudLib) {

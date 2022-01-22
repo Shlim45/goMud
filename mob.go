@@ -479,12 +479,19 @@ func (m *MOB) SavePlayerToDBQuery() (string, error) {
 	if m == nil {
 		return "", errors.New("MOB is nil")
 	}
+	var location string
+	if m.Room != nil {
+		location = m.Room.RoomID()
+	} else {
+		// TODO(jon): need to preserve last room
+		location = ""
+	}
 	player := PlayerDB{
 		name:       m.Name(),
 		account:    m.User.Account.UserName(),
 		class:      m.baseCharStats().CurrentClass().Name(),
 		race:       m.baseCharStats().Race().Name(),
-		room:       m.Room.roomID,
+		room:       location,
 		coins:      m.Coins,
 		stre:       m.baseCharStats().Stat(STAT_STRENGTH),
 		cons:       m.baseCharStats().Stat(STAT_CONSTITUTION),

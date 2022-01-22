@@ -7,12 +7,21 @@ import (
 )
 
 type Session struct {
-	id   string
-	conn net.Conn
+	id     string
+	conn   net.Conn
+	status SessionStatus
 }
 
 func (s *Session) SessionId() string {
 	return s.id
+}
+
+func (s *Session) Status() SessionStatus {
+	return s.status
+}
+
+func (s *Session) SetStatus(newStatus SessionStatus) {
+	s.status = newStatus
 }
 
 // TODO(jon): non-blocking write to session
@@ -65,6 +74,19 @@ func (s *Session) DisconnectSession(world *World, users map[string]*User) {
 	}
 }
 
+type SessionStatus uint8
+
+const (
+	DEFAULT = iota
+	USERNAME
+	PASSWORD
+	MENU
+	SELECT
+	CREATE
+	INGAME
+	QUIT
+)
+
 func (h *SessionHandler) Start() {
 	for sessionEvent := range h.eventChannel {
 		session := sessionEvent.Session
@@ -73,33 +95,26 @@ func (h *SessionHandler) Start() {
 		switch event := sessionEvent.Event.(type) {
 
 		case *SessionCreatedEvent:
-			// create user
-
-			session.WriteLine("Username: ")
-			session.WriteLine("Password: ")
-			character := &MOB{
-				name:     generateName(),
-				tickType: TICK_STOP,
-			}
-
-			user := &User{session, nil, character, true}
-			character.User = user
-
-			character.Init(h.library)
+			user := &User{session, nil, nil, true}
 
 			h.users[sid] = user
-			h.world.HandleCharacterJoined(character)
 
 			// TODO(jon): log user in, get account info etc
+			session.WriteLine("Welcome to Darkness Falls.\r\n")
+			session.WriteLine("\r\nUsername: ")
+			session.SetStatus(USERNAME)
 
 		case *SessionDisconnectedEvent:
-			// remove user
 			session.DisconnectSession(h.world, h.users)
 
 		case *SessionInputEvent:
-
 			user := h.users[sid]
-			h.world.HandlePlayerInput(user.Character, event.input, h.library)
+
+			if session.Status() == INGAME {
+				h.world.HandlePlayerInput(user.Character, event.input, h.library)
+			} else {
+				h.world.HandleUserLogin(user, event.input)
+			}
 		}
 	}
 }

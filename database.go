@@ -38,8 +38,6 @@ func DBConnect() *sql.DB {
 		panic(err.Error())
 	}
 
-	// TODO(jon): handle during shutdown
-	//defer db.Close()
 	return db
 }
 
