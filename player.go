@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type Security uint8
+
+const (
+	SecDefault = iota
+	SecStaff
+	SecAdmin
+)
+
 type Player struct {
 	name          string
 	Account       string
@@ -27,6 +35,7 @@ type Player struct {
 	tickCount     uint64
 	victim        MOB
 	LastDate      string
+	SecClearance  Security
 }
 
 func (p *Player) Name() string {
@@ -387,7 +396,6 @@ func (p *Player) releaseCorpse(w *World) {
 		p.SendMessage("You release your corpse!", true)
 		p.Room().ShowOthers(p, nil, fmt.Sprintf("%s releases their corpse!", p.Name()))
 		w.MoveMob(p, target)
-		p.Room().ShowOthers(p, nil, fmt.Sprintf("%s appears in a puff of smoke.", p.Name()))
 		return
 	}
 }

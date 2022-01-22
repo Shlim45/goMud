@@ -102,8 +102,10 @@ func (w *World) GetRoomById(id string) *Room {
 }
 
 func (w *World) MoveMob(mob MOB, to *Room) {
+	mob.Room().ShowOthers(mob, nil, fmt.Sprintf("%s vanishes with a flash!", mob.Name()))
 	mob.Room().RemoveMOB(mob)
 	to.AddMOB(mob)
+	mob.Room().ShowOthers(mob, nil, fmt.Sprintf("%s appears in a puff of smoke.", mob.Name()))
 	to.ShowRoom(mob)
 }
 
@@ -242,6 +244,9 @@ func (w *World) HandlePlayerInput(player *Player, input string, library *MudLib)
 	tokens := strings.Split(input, " ")
 	success := false
 	cmd := library.FindCommand(tokens[0])
+	if cmd != nil && player.SecClearance < cmd.security {
+		cmd = nil
+	}
 
 	for _, link := range player.Room().Links {
 		if link.Verb == tokens[0] || strings.HasPrefix(link.Verb, tokens[0]) {

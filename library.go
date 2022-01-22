@@ -250,12 +250,13 @@ func (l *MudLib) LoadCommands() {
 	l.AddCommand(&RerollCmd)
 
 	SpawnCmd := Command{
-		trigger:    "spawn",
+		trigger:    "*spawn",
 		timer:      0,
 		timerType:  TimerNone,
 		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
+		security:   SecAdmin,
 	}
 	l.AddCommand(&SpawnCmd)
 
@@ -346,6 +347,7 @@ func (l *MudLib) LoadCommands() {
 		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
+		security:   SecAdmin,
 	}
 	l.AddCommand(&CreateCmd)
 
@@ -389,13 +391,25 @@ func (l *MudLib) LoadCommands() {
 	}
 	l.AddCommand(&GoCmd)
 
+	GoToCmd := Command{
+		trigger:    "*goto",
+		timer:      0,
+		timerType:  TimerNone,
+		costType:   CostNone,
+		useCost:    0,
+		checkTimer: true,
+		security:   SecStaff,
+	}
+	l.AddCommand(&GoToCmd)
+
 	ShutdownCmd := Command{
-		trigger:    "shutdown",
+		trigger:    "*shutdown",
 		timer:      0,
 		timerType:  TimerNone,
 		costType:   CostNone,
 		useCost:    0,
 		checkTimer: false,
+		security:   SecAdmin,
 	}
 	l.AddCommand(&ShutdownCmd)
 }

@@ -16,6 +16,7 @@ type MudCommand interface {
 	CostType() ActionCost
 	UseCost() int16
 	CheckTimer() bool
+	Clearance() Security
 }
 
 type Command struct {
@@ -25,6 +26,7 @@ type Command struct {
 	costType   ActionCost
 	useCost    int16
 	checkTimer bool
+	security   Security
 }
 
 func (c *Command) Trigger() string {
@@ -87,17 +89,6 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 	case "reroll":
 		m.Init(library)
 		m.SendMessage("Your stats have been randomized and vitals have been reset to default.", true)
-		success = true
-
-	case "spawn":
-		monster := &Monster{
-			name:     "a small dog",
-			tickType: TickStop,
-		}
-		monster.Init(library)
-		monster.BasePhyStats().setLevel(5)
-		m.Room().AddMOB(monster)
-		m.Room().Show(m, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
 		success = true
 
 	case "stats":
@@ -228,112 +219,6 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 		m.SendMessage(fmt.Sprintf("You are carrying %d silver coins.", m.Coins), true)
 		success = true
 
-	case "create":
-		if len(input) < 2 {
-			m.SendMessage("Create what?  Syntax: CREATE <OBJECT TYPE> <ARTICLE OR .> <OBJECT NAME> <KEYWORD> [(<DESTINATION ROOMID>)]", true)
-			return success
-		}
-
-		var newItem Item
-
-		if n, err := strconv.Atoi(input[1]); err == nil {
-			// creating silver coins
-			if n <= 0 {
-				m.SendMessage("You must specify a number greater than 0 to create coins!", true)
-				return success
-			}
-
-			newItem = Item{
-				article:  "a",
-				name:     "pile of silver coins",
-				keyword:  "pile",
-				owner:    nil,
-				value:    uint64(n),
-				itemType: TYPE_COINS,
-			}
-
-			m.Room().AddItem(&newItem)
-			m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
-			success = true
-
-		} else {
-			// creating an object
-			itemType := strings.ToLower(input[1])
-			createItem := strings.Compare(itemType, "item") == 0
-			createExit := strings.Compare(itemType, "exit") == 0
-
-			if !createItem && !createExit {
-				m.SendMessage("Create what?  Can create ITEM or EXIT.", true)
-				return success
-			}
-
-			if createItem {
-				if len(input) < 5 {
-					m.SendMessage("You failed to specify all required fields."+
-						"  Syntax: CREATE ITEM <ARTICLE OR .> <NAME> <KEYWORD>", true)
-					return success
-				}
-				itemArticle := input[2]
-				itemName := strings.Join(input[3:len(input)-1], " ")
-				itemKeyword := input[len(input)-1]
-
-				if strings.Compare(itemArticle, ".") == 0 {
-					itemArticle = ""
-				}
-
-				newItem = Item{
-					keyword:  itemKeyword,
-					article:  itemArticle,
-					name:     itemName,
-					owner:    nil,
-					value:    0,
-					itemType: TYPE_GENERIC,
-				}
-
-				m.Room().AddItem(&newItem)
-				m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
-				success = true
-			} else if createExit {
-				if len(input) < 6 {
-					m.SendMessage("You failed to specify all required fields."+
-						"  Syntax: CREATE EXIT <ARTICLE OR .> <NAME> <KEYWORD> (<DESTINATION ROOMID>)", true)
-					return success
-				}
-
-				joinedInput := strings.Join(input, " ")
-
-				namingInput := before(joinedInput, " (")
-				namingTokens := strings.Split(namingInput, " ")
-
-				destRoomID := after(joinedInput, "(")
-				destRoomID = strings.TrimSuffix(destRoomID, ")")
-				destRoom := w.GetRoomById(destRoomID)
-				if destRoom == nil {
-					m.SendMessage(fmt.Sprintf("Invalid RoomID '%s'.", destRoomID), true)
-					return success
-				}
-
-				exitArticle := namingTokens[2]
-				exitName := strings.Join(namingTokens[3:len(namingTokens)-1], " ")
-				exitKeyword := namingTokens[len(namingTokens)-1]
-
-				if strings.Compare(exitArticle, ".") == 0 {
-					exitArticle = ""
-				}
-				newExit := Portal{
-					room:     m.Room(),
-					destRoom: destRoom,
-					article:  exitArticle,
-					name:     exitName,
-					keyword:  exitKeyword,
-				}
-
-				m.Room().AddPortal(&newExit)
-				m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newExit.Name()))
-				success = true
-			}
-		}
-
 	case "get":
 		if len(input) < 2 {
 			m.SendMessage("Get what?  Syntax: GET <ITEM>", true)
@@ -358,29 +243,6 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 			m.SendMessage(fmt.Sprintf("You don't see a '%s' here.", targetItem), true)
 			return success
 		}
-
-		/*
-			for _, item := range m.Room().Items {
-				if strings.HasPrefix(item.Keyword(), targetItem) {
-					if item.ItemType() == ItemType(TYPE_COINS) {
-						numCoins := item.Value()
-						m.Room().RemoveItem(item)
-						m.Coins += numCoins
-						m.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
-					} else {
-						m.MoveItemTo(item)
-						m.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
-					}
-					m.Room().ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
-					success = true
-					break
-				}
-			}
-
-			if !success {
-				m.SendMessage(fmt.Sprintf("You don't see a '%s' here.", targetItem), true)
-				return success
-			}*/
 
 	case "drop":
 		if len(input) < 2 {
@@ -534,12 +396,160 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 			}
 		}
 
-	case "shutdown":
-		SaveAndShutdownServer(w, library)
+	case "*goto":
+		if m.SecClearance >= c.security {
+			if len(input) < 2 {
+				m.SendMessage("GoTo where?  Syntax: *GOTO <ROOMID> or <PLAYERNAME>", true)
+				return success
+			}
+
+			targetDest := strings.Join(input[1:], " ")
+			destRoom := w.GetRoomById(targetDest)
+
+			if destRoom == nil {
+				destPlayer := w.characters[targetDest]
+				if destPlayer != nil {
+					destRoom = destPlayer.Room()
+				}
+			}
+
+			if destRoom != nil {
+				w.MoveMob(m, destRoom)
+				success = true
+			} else {
+				m.SendMessage(fmt.Sprintf("Unable to locate destination '%s' as RoomID or Player.", targetDest), true)
+			}
+		}
+
+	case "*spawn":
+		if m.SecClearance >= c.security {
+			monster := &Monster{
+				name:     "a small dog",
+				tickType: TickStop,
+			}
+			monster.Init(library)
+			monster.BasePhyStats().setLevel(5)
+			m.Room().AddMOB(monster)
+			m.Room().Show(m, fmt.Sprintf("%s appears out of thin air!", CEnemy(monster.Name())))
+			success = true
+		}
+
+	case "*create":
+		if m.SecClearance >= c.security {
+
+			if len(input) < 2 {
+				m.SendMessage("Create what?  Syntax: CREATE <OBJECT TYPE> <ARTICLE OR .> <OBJECT NAME> <KEYWORD> [(<DESTINATION ROOMID>)]", true)
+				return success
+			}
+
+			var newItem Item
+
+			if n, err := strconv.Atoi(input[1]); err == nil {
+				// creating silver coins
+				if n <= 0 {
+					m.SendMessage("You must specify a number greater than 0 to create coins!", true)
+					return success
+				}
+
+				newItem = Item{
+					article:  "a",
+					name:     "pile of silver coins",
+					keyword:  "pile",
+					owner:    nil,
+					value:    uint64(n),
+					itemType: TYPE_COINS,
+				}
+
+				m.Room().AddItem(&newItem)
+				m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+				success = true
+
+			} else {
+				// creating an object
+				itemType := strings.ToLower(input[1])
+				createItem := strings.Compare(itemType, "item") == 0
+				createExit := strings.Compare(itemType, "exit") == 0
+
+				if !createItem && !createExit {
+					m.SendMessage("Create what?  Can create ITEM or EXIT.", true)
+					return success
+				}
+
+				if createItem {
+					if len(input) < 5 {
+						m.SendMessage("You failed to specify all required fields."+
+							"  Syntax: CREATE ITEM <ARTICLE OR .> <NAME> <KEYWORD>", true)
+						return success
+					}
+					itemArticle := input[2]
+					itemName := strings.Join(input[3:len(input)-1], " ")
+					itemKeyword := input[len(input)-1]
+
+					if strings.Compare(itemArticle, ".") == 0 {
+						itemArticle = ""
+					}
+
+					newItem = Item{
+						keyword:  itemKeyword,
+						article:  itemArticle,
+						name:     itemName,
+						owner:    nil,
+						value:    0,
+						itemType: TYPE_GENERIC,
+					}
+
+					m.Room().AddItem(&newItem)
+					m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+					success = true
+				} else if createExit {
+					if len(input) < 6 {
+						m.SendMessage("You failed to specify all required fields."+
+							"  Syntax: CREATE EXIT <ARTICLE OR .> <NAME> <KEYWORD> (<DESTINATION ROOMID>)", true)
+						return success
+					}
+
+					joinedInput := strings.Join(input, " ")
+
+					namingInput := before(joinedInput, " (")
+					namingTokens := strings.Split(namingInput, " ")
+
+					destRoomID := after(joinedInput, "(")
+					destRoomID = strings.TrimSuffix(destRoomID, ")")
+					destRoom := w.GetRoomById(destRoomID)
+					if destRoom == nil {
+						m.SendMessage(fmt.Sprintf("Invalid RoomID '%s'.", destRoomID), true)
+						return success
+					}
+
+					exitArticle := namingTokens[2]
+					exitName := strings.Join(namingTokens[3:len(namingTokens)-1], " ")
+					exitKeyword := namingTokens[len(namingTokens)-1]
+
+					if strings.Compare(exitArticle, ".") == 0 {
+						exitArticle = ""
+					}
+					newExit := Portal{
+						room:     m.Room(),
+						destRoom: destRoom,
+						article:  exitArticle,
+						name:     exitName,
+						keyword:  exitKeyword,
+					}
+
+					m.Room().AddPortal(&newExit)
+					m.Room().Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newExit.Name()))
+					success = true
+				}
+			}
+		}
+
+	case "*shutdown":
+		if m.SecClearance >= c.security {
+			SaveAndShutdownServer(w, library)
+		}
 
 	default:
-		log.Panicf("Command with trigger '%s' not found.", c.Trigger())
-		return success
+		log.Printf("Command with trigger '%s' not found.", c.Trigger())
 	}
 
 	if success {

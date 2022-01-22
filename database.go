@@ -257,6 +257,11 @@ func (db *DatabaseConnection) LoadPlayers(w *World, lib *MudLib) {
 			victim:        nil,
 			LastDate:      pTag.last_date,
 		}
+		if strings.Compare(pTag.name, "Karsus") == 0 {
+			newPlayer.SecClearance = SecAdmin
+		} else if strings.Compare(pTag.name, "Czerk") == 0 {
+			newPlayer.SecClearance = SecStaff
+		}
 		w.characters[newPlayer.Name()] = &newPlayer
 		w.accounts[pTag.account].characters[newPlayer.Name()] = &newPlayer
 		count++
