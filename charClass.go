@@ -64,3 +64,11 @@ func (pc *PlayerClass) SaveCharClassToDBQuery() string {
 	return fmt.Sprintf("INSERT INTO CharClass VALUES ('%s', %d, %v) AS new ON DUPLICATE KEY UPDATE name=new.name, realm=new.realm, enabled=new.enabled",
 		pc.Name(), uint8(pc.Realm()), pc.Enabled())
 }
+
+func CreateCharClassTableDBQuery() string {
+	return "CREATE TABLE IF NOT EXISTS CharClass(" +
+		"name VARCHAR(20) PRIMARY KEY," +
+		"realm TINYINT NOT NULL DEFAULT 0," +
+		"enabled BOOLEAN NOT NULL DEFAULT 0" +
+		")"
+}

@@ -8,16 +8,13 @@ type Race interface {
 	SetEnabled(yesNo bool)
 	Enabled() bool
 	Qualifies(m *MOB) bool
-	//SetRealm(realm Realm)
-	//Realm() Realm
 	SetStatBonuses(statBonuses [NUM_STATS]float64)
 	StatBonuses() *[NUM_STATS]float64
 	SaveRaceToDBQuery() string
 }
 
 type PlayerRace struct {
-	name string
-	//realm       Realm
+	name        string
 	enabled     bool
 	statBonuses [NUM_STATS]float64
 }
@@ -42,14 +39,6 @@ func (r *PlayerRace) Qualifies(m *MOB) bool {
 	return true
 }
 
-//func (r *PlayerRace) Realm() Realm {
-//	return r.realm
-//}
-//
-//func (r *PlayerRace) SetRealm(realm Realm) {
-//	r.realm = realm
-//}
-
 func (r *PlayerRace) SetStatBonuses(statBonuses [NUM_STATS]float64) {
 	r.statBonuses = statBonuses
 }
@@ -61,4 +50,11 @@ func (r *PlayerRace) StatBonuses() *[NUM_STATS]float64 {
 func (r *PlayerRace) SaveRaceToDBQuery() string {
 	return fmt.Sprintf("INSERT INTO Race VALUES ('%s', %v) AS new ON DUPLICATE KEY UPDATE name=new.name, enabled=new.enabled",
 		r.Name(), r.Enabled())
+}
+
+func CreateRaceTableDBQuery() string {
+	return "CREATE TABLE IF NOT EXISTS Race(" +
+		"name VARCHAR(20) PRIMARY KEY," +
+		"enabled BOOLEAN NOT NULL DEFAULT 0" +
+		")"
 }

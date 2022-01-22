@@ -79,18 +79,6 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 			m.SetName(newName)
 			w.characters[m.Name()] = m
 			m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
-			/*if strings.Compare(newName, "Karsus") == 0 {
-				account := NewAccount()
-				account.SetUserName("shlimdig")
-				account.HashAndSetPassword("backstab")
-				account.SetMaxChars(3)
-				account.SetLastIP(m.User.Session.conn.LocalAddr().String())
-				account.SetLastDate(time.Now())
-				account.SetEmail("dumbmfkr99@hotmail.com")
-				account.characters[newName] = m
-				w.accounts[account.UserName()] = account
-				m.User.Account = account
-			}*/
 			success = true
 		} else {
 			m.SendMessage("That name is already in use.", true)
@@ -229,7 +217,6 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		success = true
 
 	case "quit":
-		//m.User.Session.conn.Close()
 		m.SendMessage("Are you sure you want to quit? (y/N)", true)
 		m.User.Session.SetStatus(QUIT)
 
@@ -438,7 +425,6 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 			return success
 		}
 
-		//targetPortal := strings.Join(input[1:], " ")
 		targetPortal := input[1]
 
 		for _, portal := range room.Portals {

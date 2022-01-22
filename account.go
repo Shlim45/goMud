@@ -99,3 +99,14 @@ func (a *Account) SaveAccountToDBQuery() string {
 		"username=new.username, password=new.password, max_chars=new.max_chars, last_ip=new.last_ip, last_date=new.last_date, email=new.email",
 		a.UserName(), a.PasswordHash(), a.MaxChars(), a.LastIP(), lastDate, a.Email())
 }
+
+func CreateAccountTableDBQuery() string {
+	return "CREATE TABLE IF NOT EXISTS Account(" +
+		"username VARCHAR(20) PRIMARY KEY," +
+		"password CHAR(60) NOT NULL," +
+		"max_chars TINYINT UNSIGNED NOT NULL DEFAULT 3," +
+		"last_ip VARCHAR(15)," +
+		"last_date TIMESTAMP," +
+		"email VARCHAR(319) NOT NULL" +
+		")"
+}

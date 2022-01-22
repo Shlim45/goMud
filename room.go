@@ -265,3 +265,14 @@ func (r *Room) SaveRoomToDBQuery() string {
 	return fmt.Sprintf("INSERT INTO Room VALUES ('%s', '%s', '%s', '%s') AS new ON DUPLICATE KEY UPDATE room_id=new.room_id, area=new.area, description=new.description, links=new.links",
 		roomTag.ID, roomTag.Area, roomTag.Desc, roomTag.Links)
 }
+
+func CreateRoomTableDBQuery() string {
+	return "CREATE TABLE IF NOT EXISTS Room(" +
+		"room_id VARCHAR(5) NOT NULL," +
+		"area VARCHAR(50) NOT NULL," +
+		"description VARCHAR(512)," +
+		"links VARCHAR(1024)," +
+		"PRIMARY KEY (area, room_id)," +
+		"FOREIGN KEY (area) REFERENCES Area(name) ON UPDATE CASCADE ON DELETE RESTRICT" +
+		")"
+}

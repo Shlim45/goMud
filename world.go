@@ -47,77 +47,6 @@ func (w *World) Tick() {
 	go w.Tick()
 }
 
-/*
-func (w *World) Init() {
-	w.areas["Darkness Falls"] = &Area{
-		Name:  "Darkness Falls",
-		Realm: REALM_IMMORTAL,
-	}
-
-	w.rooms = []*Room{
-		{
-			Id:   "A",
-			Desc: "standing in a room with a sign that has the letter A on it.",
-			Area: w.areas["Darkness Falls"],
-			Links: []*RoomLink{
-				{
-					Verb:   "east",
-					RoomId: "B",
-				},
-			},
-			Portals: []*RoomLink{},
-		},
-		{
-			Id:   "B",
-			Desc: "standing in a room with a sign that has the letter B on it.",
-			Area: w.areas["Darkness Falls"],
-			Links: []*RoomLink{
-				{
-					Verb:   "west",
-					RoomId: "A",
-				},
-				{
-					Verb:   "east",
-					RoomId: "C",
-				},
-			},
-			Portals: []*RoomLink{
-				{
-					Verb:   "gate",
-					RoomId: "D",
-				},
-			},
-		},
-		{
-			Id:   "C",
-			Desc: "standing in a room with a sign that has the letter C on it.",
-			Area: w.areas["Darkness Falls"],
-			Links: []*RoomLink{
-				{
-					Verb:   "west",
-					RoomId: "B",
-				},
-			},
-			Portals: []*RoomLink{},
-		},
-		{
-			Id:    "D",
-			Desc:  "standing in a room hidden behind a gate.  There is a sign that has the letter D on it.",
-			Area:  w.areas["Darkness Falls"],
-			Links: []*RoomLink{},
-			Portals: []*RoomLink{
-				{
-					Verb:   "gate",
-					RoomId: "B",
-				},
-			},
-		},
-	}
-	areaRooms := w.rooms
-	w.areas["Darkness Falls"].Rooms = areaRooms
-}
-*/
-
 func (w *World) HandleCharacterJoined(character *MOB) {
 	room := character.Room
 	if room != nil {
@@ -140,7 +69,7 @@ func (w *World) RemoveFromWorld(character *MOB) {
 	}
 	character.LastDate = TimeString(time.Now())
 	if account := w.accounts[character.Account]; account != nil {
-		account.SetLastDate(time.Now())
+		account.UpdateLastDate()
 	}
 	log.Println(fmt.Sprintf("Player logout: %s", character.Name()))
 }
@@ -151,28 +80,6 @@ func (w *World) Broadcast(msg string) {
 			player.SendMessage(msg, true)
 		}
 	}
-}
-
-func before(value string, a string) string {
-	// Get substring before a string.
-	pos := strings.Index(value, a)
-	if pos == -1 {
-		return ""
-	}
-	return value[0:pos]
-}
-
-func after(value string, a string) string {
-	// Get substring after a string.
-	pos := strings.LastIndex(value, a)
-	if pos == -1 {
-		return ""
-	}
-	adjustedPos := pos + len(a)
-	if adjustedPos >= len(value) {
-		return ""
-	}
-	return value[adjustedPos:len(value)]
 }
 
 func (w *World) GetRoomById(id string) *Room {

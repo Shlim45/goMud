@@ -11,15 +11,12 @@ func main() {
 	db.Initialize()
 
 	world := NewWorld(db)
-	//world.Init()
 
 	db.LoadAreas(world)
 	db.LoadRooms(world)
 
 	library := NewLibrary(world)
 	library.LoadCommands()
-	//library.LoadRaces()
-	//library.LoadCharClasses()
 	db.LoadRaces(library)
 	db.LoadClasses(library)
 	db.LoadAccounts(world)

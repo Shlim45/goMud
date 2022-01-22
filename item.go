@@ -89,3 +89,33 @@ func (item *Item) Keyword() string {
 func (item *Item) SetKeyword(newKey string) {
 	item.keyword = newKey
 }
+
+/*
+Portals: []*RoomLink{
+		{
+			Verb:   "gate",
+			RoomId: "D",
+		},
+	}
+*/
+
+func CreatePortalTableDBQuery() string {
+	return "CREATE TABLE IF NOT EXISTS Portal(" +
+		"name VARCHAR(50) NOT NULL," +
+		"room VARCHAR(60) NOT NULL," +
+		"dest_room VARCHAR(60)," +
+		"PRIMARY KEY (name, room)" +
+		")"
+}
+
+func CreateItemTableDBQuery() string {
+	return "CREATE TABLE IF NOT EXISTS Item(" +
+		"article VARCHAR(3)," +
+		"name VARCHAR(50) NOT NULL," +
+		"keyword VARCHAR(50) NOT NULL," +
+		"owner VARCHAR(60) NOT NULL," +
+		"value INT UNSIGNED NOT NULL," +
+		"item_type TINYINT UNSIGNED NOT NULL," +
+		"PRIMARY KEY (article, name)" +
+		")"
+}
