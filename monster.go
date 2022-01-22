@@ -215,64 +215,6 @@ func (m *Monster) RecoverCharStats() {
 	m.curCharStats = m.BaseCharStats().copyOf()
 }
 
-//
-//func (m *Monster) adjHits(amount int16, max uint16) {
-//	newHits := int32(m.CurState().hits()) + int32(amount)
-//	if newHits < 0 {
-//		m.CurState().setHits(0)
-//	} else if newHits > int32(max) {
-//		m.CurState().setHits(max)
-//	} else {
-//		m.CurState().setHits(uint16(newHits))
-//	}
-//}
-//
-//func (m *Monster) adjFat(amount int16, max uint16) {
-//	newFat := int32(m.CurState().fat()) + int32(amount)
-//	if newFat < 0 {
-//		m.CurState().setFat(0)
-//	} else if newFat > int32(max) {
-//		m.CurState().setFat(max)
-//	} else {
-//		m.CurState().setFat(uint16(newFat))
-//	}
-//}
-//
-//func (m *Monster) adjPower(amount int16, max uint16) {
-//	newPower := int32(m.CurState().power()) + int32(amount)
-//	if newPower < 0 {
-//		m.CurState().setPower(0)
-//	} else if newPower > int32(max) {
-//		m.CurState().setPower(max)
-//	} else {
-//		m.CurState().setPower(uint16(newPower))
-//	}
-//}
-//
-//func (m *Monster) adjMaxHits(amount int16) {
-//	newHits := int32(m.MaxState().hits()) + int32(amount)
-//	if newHits < 0 {
-//		newHits = 0
-//	}
-//	m.MaxState().setHits(uint16(newHits))
-//}
-//
-//func (m *Monster) adjMaxFat(amount int16) {
-//	newFat := int32(m.MaxState().fat()) + int32(amount)
-//	if newFat < 0 {
-//		newFat = 0
-//	}
-//	m.MaxState().setFat(uint16(newFat))
-//}
-//
-//func (m *Monster) adjMaxPower(amount int16) {
-//	newPower := int32(m.MaxState().power()) + int32(amount)
-//	if newPower < 0 {
-//		newPower = 0
-//	}
-//	m.MaxState().setPower(uint16(newPower))
-//}
-
 func (m *Monster) SendMessage(msg string, newLine bool) {
 	// TODO(jon): if possessed
 }
