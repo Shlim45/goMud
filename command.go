@@ -59,11 +59,10 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		// if mob still on timer, return false
 	}
 
-	// TODO(jon): success = true cases
 	switch c.Trigger() {
 	case "say":
 		msg := strings.Join(input[1:], " ")
-		//msg := strings.Trim(input, "say ")
+
 		m.SendMessage(fmt.Sprintf("You said, '%s'", msg), true)
 		room.ShowOthers(m, nil, fmt.Sprintf("%s said, '%s'", m.Name(), msg))
 		success = true
@@ -80,7 +79,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 			m.SetName(newName)
 			w.characters[m.Name()] = m
 			m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
-			if strings.Compare(newName, "Karsus") == 0 {
+			/*if strings.Compare(newName, "Karsus") == 0 {
 				account := NewAccount()
 				account.SetUserName("shlimdig")
 				account.HashAndSetPassword("backstab")
@@ -91,18 +90,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				account.characters[newName] = m
 				w.accounts[account.UserName()] = account
 				m.User.Account = account
-			} else if strings.Compare(newName, "Czerk") == 0 {
-				account := NewAccount()
-				account.SetUserName("shlimdig")
-				account.HashAndSetPassword("backstab")
-				account.SetMaxChars(3)
-				account.SetLastIP(m.User.Session.conn.LocalAddr().String())
-				account.SetLastDate(time.Now())
-				account.SetEmail("dumbmfkr99@hotmail.com")
-				account.characters[newName] = m
-				w.accounts[account.UserName()] = account
-				m.User.Account = account
-			}
+			}*/
 			success = true
 		} else {
 			m.SendMessage("That name is already in use.", true)
@@ -270,7 +258,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 			newItem = Item{
 				article:  "a",
 				name:     "pile of silver coins",
-				keyword:  "coins",
+				keyword:  "pile",
 				owner:    nil,
 				value:    uint64(n),
 				itemType: TYPE_COINS,
@@ -348,7 +336,7 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 			coinsItem := Item{
 				article: "a",
 				name:    "pile of silver coins",
-				keyword: "coins",
+				keyword: "pile",
 				owner:   nil,
 				value:   uint64(n),
 			}

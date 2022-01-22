@@ -312,6 +312,7 @@ func (db *DatabaseConnection) LoadPlayers(w *World, lib *MudLib) {
 			tickType:      TICK_STOP,
 			tickCount:     0,
 			Victim:        nil,
+			LastDate:      pTag.last_date,
 		}
 		w.characters[newPlayer.Name()] = &newPlayer
 		w.accounts[pTag.account].characters[newPlayer.Name()] = &newPlayer

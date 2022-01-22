@@ -26,6 +26,7 @@ type MOB struct {
 	tickType      TickType
 	tickCount     uint64
 	Victim        *MOB
+	LastDate      string
 }
 
 func (m *MOB) isPlayer() bool {
@@ -369,11 +370,12 @@ func (m *MOB) AwardExp(howMuch uint64) {
 	tnl := 1000 - (old % 1000)
 	m.Experience += howMuch
 	if howMuch >= tnl {
-		newLevel := m.curPhyStats().level() + 1
+		newLevel := 1 + uint8(m.Experience/1000)
 		if newLevel > 75 {
 			return
 		}
 		m.basePhyStats().setLevel(newLevel)
+		m.recoverPhyStats()
 		m.SendMessage(fmt.Sprintf("You raise a level!\r\n  Your new level is %s.",
 			CHighlight(newLevel)), true)
 	}
@@ -510,7 +512,7 @@ func (m *MOB) SavePlayerToDBQuery() (string, error) {
 		trains:     0,
 		guild:      "",
 		guild_rank: 0,
-		last_date:  TimeString(time.Now()),
+		last_date:  m.LastDate,
 	}
 	return fmt.Sprintf("INSERT INTO Player VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, '%s', %d, '%s')"+
 			" AS new ON DUPLICATE KEY UPDATE name=new.name, account=new.account, class=new.class, race=new.race, room=new.room, coins=new.coins, stre=new.stre, cons=new.cons, agil=new.agil, dext=new.dext, inte=new.inte, wisd=new.wisd, "+

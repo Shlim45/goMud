@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 )
 
 type World struct {
@@ -14,6 +15,7 @@ type World struct {
 	areas       map[string]*Area
 	rooms       []*Room
 	db          DBConnection
+	tickCount   uint64
 }
 
 func NewWorld(db DBConnection) *World {
@@ -31,6 +33,18 @@ func (w *World) AddArea(area *Area) {
 	if !exists {
 		w.areas[area.Name] = area
 	}
+}
+
+func (w *World) Tick() {
+	if w.tickCount > 0 {
+		if w.tickCount%(60*5) == 0 {
+			w.db.SavePlayers(w)
+		}
+
+	}
+	w.tickCount++
+	time.Sleep(1000 * time.Millisecond)
+	go w.Tick()
 }
 
 /*
@@ -124,7 +138,10 @@ func (w *World) RemoveFromWorld(character *MOB) {
 		room.RemoveMOB(character)
 		room.Show(nil, fmt.Sprintf("%s disappears in a puff of smoke.", character.Name()))
 	}
-
+	character.LastDate = TimeString(time.Now())
+	if account := w.accounts[character.Account]; account != nil {
+		account.SetLastDate(time.Now())
+	}
 	log.Println(fmt.Sprintf("Player logout: %s", character.Name()))
 }
 

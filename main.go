@@ -25,6 +25,8 @@ func main() {
 	db.LoadAccounts(world)
 	db.LoadPlayers(world, library)
 
+	world.Tick()
+
 	sessionHandler := NewSessionHandler(world, library, ch)
 	go sessionHandler.Start()
 
