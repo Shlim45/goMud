@@ -14,6 +14,7 @@ func main() {
 
 	db.LoadAreas(world)
 	db.LoadRooms(world)
+	db.LoadExits(world)
 
 	library := NewLibrary(world)
 	library.LoadCommands()

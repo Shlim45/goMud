@@ -230,13 +230,14 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 
 	case "create":
 		if len(input) < 2 {
-			m.SendMessage("Create what?  Syntax: CREATE <ARTICLE OR .> <ITEM NAME> <KEYWORD>", true)
+			m.SendMessage("Create what?  Syntax: CREATE <OBJECT TYPE> <ARTICLE OR .> <OBJECT NAME> <KEYWORD> [(<DESTINATION ROOMID>)]", true)
 			return success
 		}
 
 		var newItem Item
 
 		if n, err := strconv.Atoi(input[1]); err == nil {
+			// creating silver coins
 			if n <= 0 {
 				m.SendMessage("You must specify a number greater than 0 to create coins!", true)
 				return success
@@ -251,28 +252,87 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 				itemType: TYPE_COINS,
 			}
 
-		} else {
-			itemArticle := input[1]
-			itemName := strings.Join(input[2:len(input)-1], " ")
-			itemKeyword := input[len(input)-1]
+			m.Room.AddItem(&newItem)
+			m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+			success = true
 
-			if strings.Compare(itemArticle, ".") == 0 {
-				itemArticle = ""
+		} else {
+			// creating an object
+			itemType := strings.ToLower(input[1])
+			createItem := strings.Compare(itemType, "item") == 0
+			createExit := strings.Compare(itemType, "exit") == 0
+
+			if !createItem && !createExit {
+				m.SendMessage("Create what?  Can create ITEM or EXIT.", true)
+				return success
 			}
 
-			newItem = Item{
-				keyword:  itemKeyword,
-				article:  itemArticle,
-				name:     itemName,
-				owner:    nil,
-				value:    0,
-				itemType: TYPE_GENERIC,
+			if createItem {
+				if len(input) < 5 {
+					m.SendMessage("You failed to specify all required fields."+
+						"  Syntax: CREATE ITEM <ARTICLE OR .> <NAME> <KEYWORD>", true)
+					return success
+				}
+				itemArticle := input[2]
+				itemName := strings.Join(input[3:len(input)-1], " ")
+				itemKeyword := input[len(input)-1]
+
+				if strings.Compare(itemArticle, ".") == 0 {
+					itemArticle = ""
+				}
+
+				newItem = Item{
+					keyword:  itemKeyword,
+					article:  itemArticle,
+					name:     itemName,
+					owner:    nil,
+					value:    0,
+					itemType: TYPE_GENERIC,
+				}
+
+				m.Room.AddItem(&newItem)
+				m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
+				success = true
+			} else if createExit {
+				if len(input) < 6 {
+					m.SendMessage("You failed to specify all required fields."+
+						"  Syntax: CREATE EXIT <ARTICLE OR .> <NAME> <KEYWORD> (<DESTINATION ROOMID>)", true)
+					return success
+				}
+
+				joinedInput := strings.Join(input, " ")
+
+				namingInput := before(joinedInput, " (")
+				namingTokens := strings.Split(namingInput, " ")
+
+				destRoomID := after(joinedInput, "(")
+				destRoomID = strings.TrimSuffix(destRoomID, ")")
+				destRoom := w.GetRoomById(destRoomID)
+				if destRoom == nil {
+					m.SendMessage(fmt.Sprintf("Invalid RoomID '%s'.", destRoomID), true)
+					return success
+				}
+
+				exitArticle := namingTokens[2]
+				exitName := strings.Join(namingTokens[3:len(namingTokens)-1], " ")
+				exitKeyword := namingTokens[len(namingTokens)-1]
+
+				if strings.Compare(exitArticle, ".") == 0 {
+					exitArticle = ""
+				}
+				newExit := Portal{
+					room:     m.Room,
+					destRoom: destRoom,
+					article:  exitArticle,
+					name:     exitName,
+					keyword:  exitKeyword,
+				}
+
+				m.Room.AddPortal(&newExit)
+				m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newExit.Name()))
+				success = true
 			}
 		}
-
-		m.Room.AddItem(&newItem)
-		m.Room.Show(nil, fmt.Sprintf("\r\n%s falls from the sky!", newItem.Name()))
-		success = true
 
 	case "get":
 		if len(input) < 2 {
@@ -428,13 +488,18 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		targetPortal := input[1]
 
 		for _, portal := range room.Portals {
-			if portal.Verb == targetPortal || strings.HasPrefix(portal.Verb, targetPortal) {
-				target := w.GetRoomById(portal.RoomId)
-				if target != nil {
-					m.SendMessage(fmt.Sprintf("You travel into a %s.", portal.Verb), true)
-					room.ShowOthers(m, nil, fmt.Sprintf("%s went into a %s.", m.Name(), portal.Verb))
-					w.MoveCharacter(m, target)
+			if portal.Keyword() == targetPortal || strings.HasPrefix(portal.Keyword(), targetPortal) {
+				//target := w.GetRoomById(portal.RoomId)
+				destRoom := portal.DestRoom()
+				if destRoom != nil {
+					m.SendMessage(fmt.Sprintf("You travel into a %s.", portal.Keyword()), true)
+					room.ShowOthers(m, nil, fmt.Sprintf("%s went into a %s.", m.Name(), portal.Keyword()))
+					w.MoveCharacter(m, destRoom)
 					m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
+					success = true
+					break
+				} else {
+					m.SendMessage("That exit is broken... nowhere to go!", true)
 					success = true
 					break
 				}

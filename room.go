@@ -90,7 +90,7 @@ type Room struct {
 	Desc    string
 	Area    *Area
 	Links   []*RoomLink
-	Portals []*RoomLink
+	Portals []*Portal
 	Items   []*Item
 	Mobs    []*MOB
 }
@@ -100,6 +100,23 @@ func (r *Room) RoomID() string {
 		return fmt.Sprintf("%s#%s", r.Area.Name, r.Id)
 	}
 	return r.Id
+}
+
+func (r *Room) AddPortal(port *Portal) {
+	r.Portals = append(r.Portals, port)
+	port.SetLocation(r)
+}
+
+func (r *Room) RemovePortal(port *Portal) {
+	port.SetLocation(nil)
+
+	var portals []*Portal
+	for _, p := range r.Portals {
+		if p != port {
+			portals = append(portals, p)
+		}
+	}
+	r.Portals = portals
 }
 
 func (r *Room) AddItem(item *Item) {
@@ -178,7 +195,7 @@ func (r *Room) ShowRoom(player *MOB) {
 		count := 0
 		output.WriteString("You also see ")
 		for _, portal := range r.Portals {
-			output.WriteString(CExit("a " + portal.Verb))
+			output.WriteString(CExit(portal.FullName()))
 			count++
 			if count < numPortals {
 				output.WriteString(", ")

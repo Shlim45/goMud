@@ -7,6 +7,8 @@ type MudItem interface {
 	SetOwner(newOwner ItemPossessor)
 	Article() string
 	SetArticle(newArt string)
+	Name() string
+	SetName(newName string)
 	Keyword() string
 	SetKeyword(newKey string)
 	FullName() string
@@ -99,15 +101,6 @@ Portals: []*RoomLink{
 		},
 	}
 */
-
-func CreatePortalTableDBQuery() string {
-	return "CREATE TABLE IF NOT EXISTS Portal(" +
-		"name VARCHAR(50) NOT NULL," +
-		"room VARCHAR(60) NOT NULL," +
-		"dest_room VARCHAR(60)," +
-		"PRIMARY KEY (name, room)" +
-		")"
-}
 
 func CreateItemTableDBQuery() string {
 	return "CREATE TABLE IF NOT EXISTS Item(" +

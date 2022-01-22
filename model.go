@@ -1,13 +1,5 @@
 package main
 
-//type Entity struct {
-//	entityId string
-//}
-//
-//func (e *Entity) EntityId() string {
-//	return e.entityId
-//}
-
 type User struct {
 	Session   *Session
 	Account   *Account
@@ -77,12 +69,9 @@ func (R Realm) God() string {
 	}
 }
 
-type Environmental interface {
+type Mob interface {
 	Name() string
 	SetName(newName string)
-}
-
-type Mob interface {
 	basePhyStats() *PhyStats
 	curPhyStats() *PhyStats
 	recoverPhyStats()

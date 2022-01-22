@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"strings"
@@ -13,7 +14,13 @@ type DBConnection interface {
 	Initialize()
 	Update(query string) bool
 	Query(query string) *sql.Rows
+	LoadAreas(w *World)
 	LoadRooms(w *World)
+	LoadExits(w *World)
+	LoadRaces(lib *MudLib)
+	LoadClasses(lib *MudLib)
+	LoadAccounts(w *World)
+	LoadPlayers(w *World, lib *MudLib)
 	SaveRooms(w *World)
 	SaveAreas(w *World)
 	SavePlayers(w *World)
@@ -329,6 +336,7 @@ func (db *DatabaseConnection) LoadRooms(w *World) {
 			Items:   nil,
 			Mobs:    nil,
 		}
+
 		w.rooms = append(w.rooms, &newRoom)
 		if area := newRoom.Area; area != nil {
 			area.Rooms = append(area.Rooms, &newRoom)
@@ -340,10 +348,67 @@ func (db *DatabaseConnection) LoadRooms(w *World) {
 	log.Printf("Done loading %d rooms.\r\n", count)
 }
 
+func (db *DatabaseConnection) LoadExits(w *World) {
+	log.Println("Loading exits...")
+
+	count := 0
+	for _, room := range w.rooms {
+		pResults := db.Query(fmt.Sprintf("SELECT * FROM Portal WHERE room='%s'", room.RoomID()))
+		for pResults.Next() {
+
+			var portTag PortalTag
+			err := pResults.Scan(&portTag.Name, &portTag.Room, &portTag.DestRoom)
+			if err != nil {
+				log.Println(err.Error())
+				continue
+			}
+
+			var art string
+			if strings.HasPrefix(portTag.Name, "a ") {
+				art = "a"
+			} else if strings.HasPrefix(portTag.Name, "an ") {
+				art = "an"
+			} else if strings.HasPrefix(portTag.Name, "the ") {
+				art = "the"
+			} else if strings.HasPrefix(portTag.Name, "A ") {
+				art = "A"
+			} else if strings.HasPrefix(portTag.Name, "An ") {
+				art = "An"
+			} else if strings.HasPrefix(portTag.Name, "The ") {
+				art = "The"
+			} else {
+				art = ""
+			}
+
+			var keyWord string
+			words := strings.Split(portTag.Name, " ")
+			keyWord = words[len(words)-1]
+
+			noArtName := portTag.Name[len(art)+1:]
+
+			newPort := Portal{
+				room:     room,
+				destRoom: w.GetRoomById(portTag.DestRoom),
+				article:  art,
+				name:     noArtName,
+				keyword:  keyWord,
+			}
+			room.Portals = append(room.Portals, &newPort)
+			count++
+		}
+	}
+
+	log.Printf("Done loading %d exits.\r\n", count)
+}
+
 func (db *DatabaseConnection) SaveRooms(w *World) {
 	log.Println("Saving rooms...")
 	for _, room := range w.rooms {
 		db.Update(room.SaveRoomToDBQuery())
+		// update exits
+		for _, portal := range room.Portals {
+			db.Update(portal.SaveExitToDBQuery())
+		}
 	}
 	log.Println("Done saving rooms.")
 }
