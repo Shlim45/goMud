@@ -251,10 +251,7 @@ func (w *World) HandlePlayerInput(player *MOB, input string, library *MudLib) {
 
 			target := w.GetRoomById(link.RoomId)
 			if target != nil {
-				player.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
-				player.Room.ShowOthers(player, nil, fmt.Sprintf("%s went %s.", player.Name(), link.Verb))
-				w.MoveCharacter(player, target)
-				player.Room.ShowOthers(player, nil, fmt.Sprintf("%s just came in.", player.Name()))
+				player.Walk(target, link.Verb)
 				success = true
 				break
 			}

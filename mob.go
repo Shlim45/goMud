@@ -328,6 +328,26 @@ func (m *MOB) adjMaxPower(amount uint16) {
 	m.maxState().setPower(uint16(newPower))
 }
 
+func (m *MOB) Walk(dest *Room, verb string) {
+	m.SendMessage(fmt.Sprintf("You travel %s.", verb), true)
+	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s went %s.", m.Name(), verb))
+	m.Room.RemoveMOB(m)
+	dest.AddMOB(m)
+	dest.ShowRoom(m)
+	m.adjFat(-2, m.maxState().fat())
+	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
+}
+
+func (m *MOB) WalkThrough(port *Portal) {
+	m.SendMessage(fmt.Sprintf("You travel into a %s.", port.Keyword()), true)
+	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s went into a %s.", m.Name(), port.Keyword()))
+	m.Room.RemoveMOB(m)
+	port.DestRoom().AddMOB(m)
+	port.DestRoom().ShowRoom(m)
+	m.adjFat(-2, m.maxState().fat())
+	m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
+}
+
 func (m *MOB) attackTarget(target *MOB) {
 	if target == nil {
 		m.SendMessage("You must specify a target.", true)

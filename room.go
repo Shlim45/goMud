@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -93,6 +94,50 @@ type Room struct {
 	Portals []*Portal
 	Items   []*Item
 	Mobs    []*MOB
+}
+
+func (r *Room) FindItem(query string) *Item {
+	queryString := strings.ToLower(before(query, "#"))
+	posString := after(query, "#")
+	itemPos := 1
+	if len(posString) > 0 {
+		if pos, err := strconv.Atoi(posString); err == nil {
+			itemPos = pos
+		}
+	}
+	count := 0
+	for _, item := range r.Items {
+		if strings.HasPrefix(strings.ToLower(item.Keyword()), queryString) {
+			count++
+			if count == itemPos {
+				return item
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Room) FindExit(query string) *Portal {
+	queryString := strings.ToLower(before(query, "#"))
+	posString := after(query, "#")
+	exitPos := 1
+	if len(posString) > 0 {
+		if pos, err := strconv.Atoi(posString); err == nil {
+			exitPos = pos
+		}
+	}
+	count := 0
+	for _, portal := range r.Portals {
+		if strings.HasPrefix(strings.ToLower(portal.Keyword()), queryString) {
+			count++
+			if count == exitPos {
+				return portal
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *Room) RoomID() string {

@@ -341,27 +341,46 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 		}
 
 		targetItem := input[1]
-		for _, item := range m.Room.Items {
-			if strings.HasPrefix(item.Keyword(), targetItem) {
-				if item.ItemType() == ItemType(TYPE_COINS) {
-					numCoins := item.Value()
-					m.Room.RemoveItem(item)
-					m.Coins += numCoins
-					m.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
-				} else {
-					m.MoveItemTo(item)
-					m.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
-				}
-				m.Room.ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
-				success = true
-				break
+		item := m.Room.FindItem(targetItem)
+		if item != nil {
+			if item.ItemType() == ItemType(TYPE_COINS) {
+				numCoins := item.Value()
+				m.Room.RemoveItem(item)
+				m.Coins += numCoins
+				m.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
+			} else {
+				m.MoveItemTo(item)
+				m.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
 			}
-		}
-
-		if !success {
+			m.Room.ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
+			success = true
+		} else {
 			m.SendMessage(fmt.Sprintf("You don't see a '%s' here.", targetItem), true)
 			return success
 		}
+
+		/*
+			for _, item := range m.Room.Items {
+				if strings.HasPrefix(item.Keyword(), targetItem) {
+					if item.ItemType() == ItemType(TYPE_COINS) {
+						numCoins := item.Value()
+						m.Room.RemoveItem(item)
+						m.Coins += numCoins
+						m.SendMessage(fmt.Sprintf("You pick up %d silver coins.", numCoins), true)
+					} else {
+						m.MoveItemTo(item)
+						m.SendMessage(fmt.Sprintf("You pick up %s.", item.FullName()), true)
+					}
+					m.Room.ShowOthers(m, nil, fmt.Sprintf("%s picks up %s.", m.Name(), item.FullName()))
+					success = true
+					break
+				}
+			}
+
+			if !success {
+				m.SendMessage(fmt.Sprintf("You don't see a '%s' here.", targetItem), true)
+				return success
+			}*/
 
 	case "drop":
 		if len(input) < 2 {
@@ -487,44 +506,32 @@ func (c *Command) ExecuteCmd(m *MOB, input []string, w *World, library *MudLib) 
 
 		targetPortal := input[1]
 
-		for _, portal := range room.Portals {
-			if portal.Keyword() == targetPortal || strings.HasPrefix(portal.Keyword(), targetPortal) {
-				//target := w.GetRoomById(portal.RoomId)
-				destRoom := portal.DestRoom()
-				if destRoom != nil {
-					m.SendMessage(fmt.Sprintf("You travel into a %s.", portal.Keyword()), true)
-					room.ShowOthers(m, nil, fmt.Sprintf("%s went into a %s.", m.Name(), portal.Keyword()))
-					w.MoveCharacter(m, destRoom)
-					m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
-					success = true
-					break
-				} else {
-					m.SendMessage("That exit is broken... nowhere to go!", true)
-					success = true
-					break
-				}
+		port := m.Room.FindExit(targetPortal)
+		if port != nil {
+			destRoom := port.DestRoom()
+			if destRoom != nil {
+				m.WalkThrough(port)
+				success = true
+				break
+			} else {
+				m.SendMessage("That exit is broken... nowhere to go!", true)
 			}
-		}
-
-		if !success {
+		} else {
 			for _, link := range room.Links {
 				if link.Verb == targetPortal || strings.HasPrefix(link.Verb, targetPortal) {
 					target := w.GetRoomById(link.RoomId)
 					if target != nil {
-						m.SendMessage(fmt.Sprintf("You travel %s.", link.Verb), true)
-						room.ShowOthers(m, nil, fmt.Sprintf("%s went %s.", m.Name(), link.Verb))
-						w.MoveCharacter(m, target)
-						m.Room.ShowOthers(m, nil, fmt.Sprintf("%s just came in.", m.Name()))
+						m.Walk(target, link.Verb)
 						success = true
 						break
 					}
 				}
 			}
-		}
 
-		if !success {
-			m.SendMessage(fmt.Sprintf("There isn't a '%s' here.", targetPortal), true)
-			return success
+			if !success {
+				m.SendMessage(fmt.Sprintf("There isn't a '%s' here.", targetPortal), true)
+				return success
+			}
 		}
 
 	case "shutdown":
