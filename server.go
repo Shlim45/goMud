@@ -32,7 +32,7 @@ func handleConnection(conn net.Conn, inputChannel chan SessionEvent) error {
 		n, err := conn.Read(buf)
 		if err != nil && err != io.EOF {
 			inputChannel <- SessionEvent{session, &SessionDisconnectedEvent{}}
-			log.Printf("Session disconnected from %s (%s)", session.conn.LocalAddr(), session.conn.RemoteAddr())
+			log.Printf("Session disconnected from %s", session.conn.LocalAddr())
 		}
 		if n == 0 {
 			inputChannel <- SessionEvent{session, &SessionDisconnectedEvent{}}

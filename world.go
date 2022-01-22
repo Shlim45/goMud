@@ -127,7 +127,9 @@ func (w *World) RemoveFromWorld(character *MOB) {
 
 func (w *World) Broadcast(msg string) {
 	for _, player := range w.characters {
-		player.SendMessage(msg, true)
+		if player.User.Session.Status() == INGAME {
+			player.SendMessage(msg, true)
+		}
 	}
 }
 

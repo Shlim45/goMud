@@ -3,6 +3,7 @@ package main
 import "log"
 
 func SaveAndShutdownServer(world *World, library *MudLib) {
+	world.Broadcast(CHighlight("Shutdown initiated."))
 	// TODO(jon): This does not UPDATE, only INSERT.  Need to save changes.
 	log.Println("Shutting down server...")
 	world.db.SaveRaces(library)
