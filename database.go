@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -40,7 +42,18 @@ func NewDatabase() *DatabaseConnection {
 }
 
 func DBConnect() *sql.DB {
-	db, err := sql.Open("mysql", "mudhost:B@ckstab69@tcp(127.0.0.1:3306)/gomud")
+	loadErr := godotenv.Load()
+	if loadErr != nil {
+		log.Fatalln("Error loading .env file")
+	}
+	dbHost := "127.0.0.1"
+	dbPort := "3306"
+	dbName := os.Getenv("DB_NAME")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+
+	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+		dbUser, dbPass, dbHost, dbPort, dbName))
 	if err != nil {
 		panic(err.Error())
 	}
