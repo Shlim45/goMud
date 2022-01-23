@@ -42,15 +42,22 @@ func NewDatabase() *DatabaseConnection {
 }
 
 func DBConnect() *sql.DB {
-	loadErr := godotenv.Load()
-	if loadErr != nil {
-		log.Fatalln("Error loading .env file")
-	}
 	dbHost := "127.0.0.1"
 	dbPort := "3306"
-	dbName := os.Getenv("DB_NAME")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := "gomud"
+	dbUser := "root"
+	dbPass := "root"
+
+	loadErr := godotenv.Load()
+	if loadErr != nil {
+		log.Println("Error loading .env file, using default values")
+	} else {
+		dbHost = os.Getenv("DB_HOST")
+		dbPort = os.Getenv("DB_PORT")
+		dbName = os.Getenv("DB_NAME")
+		dbUser = os.Getenv("DB_USER")
+		dbPass = os.Getenv("DB_PASSWORD")
+	}
 
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
 		dbUser, dbPass, dbHost, dbPort, dbName))
