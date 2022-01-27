@@ -25,7 +25,7 @@ func main() {
 
 	world.Tick()
 
-	sessionHandler := NewSessionHandler(world, library, ch)
+	sessionHandler := NewSessionHandler(library, ch)
 	go sessionHandler.Start()
 
 	err := startServer(ch)

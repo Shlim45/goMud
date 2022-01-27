@@ -44,15 +44,13 @@ type SessionInputEvent struct {
 }
 
 type SessionHandler struct {
-	world        *World
 	eventChannel <-chan SessionEvent
 	users        map[string]*User
 	library      *MudLib
 }
 
-func NewSessionHandler(world *World, library *MudLib, eventChannel <-chan SessionEvent) *SessionHandler {
+func NewSessionHandler(library *MudLib, eventChannel <-chan SessionEvent) *SessionHandler {
 	return &SessionHandler{
-		world:        world,
 		library:      library,
 		eventChannel: eventChannel,
 		users:        map[string]*User{},
@@ -105,15 +103,15 @@ func (h *SessionHandler) Start() {
 			session.SetStatus(USERNAME)
 
 		case *SessionDisconnectedEvent:
-			session.DisconnectSession(h.world, h.users)
+			session.DisconnectSession(h.library.world, h.users)
 
 		case *SessionInputEvent:
 			user := h.users[sid]
 
 			if session.Status() == INGAME {
-				h.world.HandlePlayerInput(user.Character, event.input, h.library)
+				h.library.world.HandlePlayerInput(user.Character, event.input, h.library)
 			} else {
-				h.world.HandleUserLogin(user, event.input)
+				h.library.world.HandleUserLogin(user, event.input)
 			}
 		}
 	}

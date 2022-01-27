@@ -53,7 +53,7 @@ func (c *Command) CheckTimer() bool {
 	return c.checkTimer
 }
 
-func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLib) bool {
+func (c *Command) ExecuteCmd(m *Player, input []string, library *MudLib) bool {
 	success := false
 	room := m.Room()
 
@@ -75,11 +75,11 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 
 	case "rename":
 		newName := input[len(input)-1]
-		_, exists := w.characters[newName]
+		_, exists := library.world.characters[newName]
 		if !exists {
-			delete(w.characters, m.Name())
+			delete(library.world.characters, m.Name())
 			m.SetName(newName)
-			w.characters[m.Name()] = m
+			library.world.characters[m.Name()] = m
 			m.SendMessage(fmt.Sprintf("Your name has been changed to %s.", m.Name()), true)
 			success = true
 		} else {
@@ -137,7 +137,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 			m.SendMessage("You must be dead to release your corpse.", true)
 			return success
 		}
-		m.releaseCorpse(w)
+		m.releaseCorpse(library.world)
 		success = true
 
 	case "hit":
@@ -381,7 +381,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 		} else {
 			for _, link := range room.Links {
 				if link.Verb == targetPortal || strings.HasPrefix(link.Verb, targetPortal) {
-					target := w.GetRoomById(link.RoomId)
+					target := library.world.GetRoomById(link.RoomId)
 					if target != nil {
 						m.Walk(target, link.Verb)
 						success = true
@@ -404,17 +404,17 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 			}
 
 			targetDest := strings.Join(input[1:], " ")
-			destRoom := w.GetRoomById(targetDest)
+			destRoom := library.world.GetRoomById(targetDest)
 
 			if destRoom == nil {
-				destPlayer := w.characters[targetDest]
+				destPlayer := library.world.characters[targetDest]
 				if destPlayer != nil {
 					destRoom = destPlayer.Room()
 				}
 			}
 
 			if destRoom != nil {
-				w.MoveMob(m, destRoom)
+				library.world.MoveMob(m, destRoom)
 				success = true
 			} else {
 				m.SendMessage(fmt.Sprintf("Unable to locate destination '%s' as RoomID or Player.", targetDest), true)
@@ -515,7 +515,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 
 					destRoomID := after(joinedInput, "(")
 					destRoomID = strings.TrimSuffix(destRoomID, ")")
-					destRoom := w.GetRoomById(destRoomID)
+					destRoom := library.world.GetRoomById(destRoomID)
 					if destRoom == nil {
 						m.SendMessage(fmt.Sprintf("Invalid RoomID '%s'.", destRoomID), true)
 						return success
@@ -545,7 +545,7 @@ func (c *Command) ExecuteCmd(m *Player, input []string, w *World, library *MudLi
 
 	case "*shutdown":
 		if m.SecClearance >= c.security {
-			SaveAndShutdownServer(w, library)
+			SaveAndShutdownServer(library)
 		}
 
 	default:

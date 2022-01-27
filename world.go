@@ -266,7 +266,7 @@ func (w *World) HandlePlayerInput(player *Player, input string, library *MudLib)
 
 	if !success {
 		if cmd != nil {
-			go cmd.ExecuteCmd(player, tokens, w, library)
+			go cmd.ExecuteCmd(player, tokens, library)
 		} else {
 			player.SendMessage(fmt.Sprintf("Huh?  Command '%s' not found.", tokens[0]), true)
 		}

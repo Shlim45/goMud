@@ -2,32 +2,31 @@ package main
 
 import "log"
 
-func SaveAndShutdownServer(world *World, library *MudLib) {
-	world.Broadcast(CHighlight("Shutdown initiated."))
+func SaveAndShutdownServer(library *MudLib) {
+	library.world.Broadcast(CHighlight("Shutdown initiated."))
 	log.Println("Shutting down server...")
-	world.db.SaveRaces(library)
-	world.db.SaveCharClasses(library)
-	world.db.SaveAccounts(world)
-	world.db.SavePlayers(world)
-	world.db.SaveAreas(world)
-	world.db.SaveRooms(world)
+	library.world.db.SaveRaces(library)
+	library.world.db.SaveCharClasses(library)
+	library.world.db.SaveAccounts(library.world)
+	library.world.db.SavePlayers(library.world)
+	library.world.db.SaveAreas(library.world)
+	library.world.db.SaveRooms(library.world)
 	log.Println("World and objects saved.")
 
+	log.Println("Closing database connection...")
+	defer library.world.db.DatabaseConnection().Close()
+
 	log.Println("Logging off players.")
-	for _, mob := range world.characters {
+	for _, mob := range library.world.characters {
 		if u := mob.User; u != nil {
 			if u.Session.Status() == INGAME {
-				world.RemoveFromWorld(mob)
+				library.world.RemoveFromWorld(mob)
 			}
 			u.Session.WriteLine("\r\nGoodbye")
 			u.Session.conn.Close()
 		}
 	}
 	log.Println("All players logged off.")
-
-	log.Println("Closing database connection...")
-	defer world.db.DatabaseConnection().Close()
-	log.Println("Database disconnected.")
 
 	// TODO(jon): Need a flag on server? that can be set to shut game down.
 }
